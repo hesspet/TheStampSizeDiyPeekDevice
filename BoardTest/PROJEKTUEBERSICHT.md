@@ -1,6 +1,6 @@
 ---
 Datum: 19.05.2026
-Version: 5
+Version: 6
 Autor: Peter Heß, Germany (+Codex)
 ---
 # BoardTest
@@ -11,7 +11,7 @@ Autor: Peter Heß, Germany (+Codex)
 
 Die Firmware prüft die zentralen Board-Funktionen:
 
-- Programmversion: `1.1.0`.
+- Programmversion: `1.2.0`.
 - OLED-Initialisierung über I2C auf GPIO5 und GPIO6.
 - Startanzeige mit Programmname, Programmversion und Builddatum im Format `DD.MM.YYYY`.
 - Button-Auswertung auf GPIO9 mit internem Pull-up.
@@ -26,9 +26,28 @@ Die Firmware prüft die zentralen Board-Funktionen:
 - Serieller Programmheader über USB-Serial mit Programmname, Builddatum, Buildzeit und Debuglevel.
 - USB-Serial wartet beim Start kurz auf eine Monitor-Verbindung, damit der Startheader nach einem Reset sichtbar wird.
 
+## Gemeinsame Display-Library
+
+Die wiederverwendbaren Display-Darstellungsklassen liegen nicht mehr direkt in `BoardTest`, sondern in der projektweiten lokalen PlatformIO-Library `../lib/StampDisplay`.
+
+`BoardTest/platformio.ini` bindet die Library ein:
+
+```ini
+lib_extra_dirs =
+    ../lib
+```
+
+Die Header werden über den Library-Präfix eingebunden:
+
+```cpp
+#include <StampDisplay/ArrowDisplay.h>
+#include <StampDisplay/AsciiCharacterDisplay.h>
+#include <StampDisplay/PlayingCardDisplay.h>
+```
+
 ## Kartenanzeige
 
-Die Kartenlogik liegt isoliert in `include/PlayingCardDisplay.h` und `src/PlayingCardDisplay.cpp`.
+Die Kartenlogik liegt isoliert in `../lib/StampDisplay/include/StampDisplay/PlayingCardDisplay.h` und `../lib/StampDisplay/src/PlayingCardDisplay.cpp`.
 
 Aufrufbar sind 54 Kartenindizes:
 
@@ -40,7 +59,7 @@ Die Werte werden angezeigt als `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `X`,
 
 ## Pfeil- und ASCII-Anzeige
 
-Die Pfeilanzeige liegt isoliert in `include/ArrowDisplay.h` und `src/ArrowDisplay.cpp`.
+Die Pfeilanzeige liegt isoliert in `../lib/StampDisplay/include/StampDisplay/ArrowDisplay.h` und `../lib/StampDisplay/src/ArrowDisplay.cpp`.
 
 Aufrufbar sind acht Kompassrichtungen:
 
@@ -55,7 +74,7 @@ Aufrufbar sind acht Kompassrichtungen:
 
 Die Pfeile werden mit U8g2-Primitiven selbst gezeichnet und nutzen keine Pfeil-Fonts mehr. Die Klasse unterstützt normale und invertierte Darstellung.
 
-Die ASCII-Anzeige liegt in `include/AsciiCharacterDisplay.h` und `src/AsciiCharacterDisplay.cpp`. Sie zeichnet ein oder zwei druckbare ASCII-Zeichen groß und zentriert. Bei einem Zeichen wird dieses einzelne Zeichen in der Mitte ausgegeben. Die Klasse unterstützt normale und invertierte Darstellung.
+Die ASCII-Anzeige liegt in `../lib/StampDisplay/include/StampDisplay/AsciiCharacterDisplay.h` und `../lib/StampDisplay/src/AsciiCharacterDisplay.cpp`. Sie zeichnet ein oder zwei druckbare ASCII-Zeichen groß und zentriert. Bei einem Zeichen wird dieses einzelne Zeichen in der Mitte ausgegeben. Die Klasse unterstützt normale und invertierte Darstellung.
 
 Auch `PlayingCardDisplay` unterstützt normale und invertierte Darstellung.
 

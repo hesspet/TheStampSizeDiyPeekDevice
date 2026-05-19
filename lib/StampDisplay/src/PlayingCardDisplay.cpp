@@ -1,4 +1,4 @@
-#include "PlayingCardDisplay.h"
+#include <StampDisplay/PlayingCardDisplay.h>
 
 #include <cstdio>
 

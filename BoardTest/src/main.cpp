@@ -5,10 +5,11 @@
 #include <U8g2lib.h>
 #include <Wire.h>
 
-#include "ArrowDisplay.h"
-#include "AsciiCharacterDisplay.h"
+#include <StampDisplay/ArrowDisplay.h>
+#include <StampDisplay/AsciiCharacterDisplay.h>
+#include <StampDisplay/PlayingCardDisplay.h>
+
 #include "config.h"
-#include "PlayingCardDisplay.h"
 
 U8G2_SSD1306_72X40_ER_F_HW_I2C display(U8G2_R0, U8X8_PIN_NONE);
 ArrowDisplay arrowDisplay;

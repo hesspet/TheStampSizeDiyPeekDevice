@@ -1,4 +1,4 @@
-#include "AsciiCharacterDisplay.h"
+#include <StampDisplay/AsciiCharacterDisplay.h>
 
 namespace
 {

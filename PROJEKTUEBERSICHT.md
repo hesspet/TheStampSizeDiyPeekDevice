@@ -1,6 +1,6 @@
 ---
 Datum: 19.05.2026
-Version: 4
+Version: 5
 Autor: Peter Heß, Germany (+Codex)
 ---
 # Projektübersicht
@@ -22,7 +22,13 @@ Dieses Repository sammelt mehrere PlatformIO-Unterprojekte für das kleine ESP32
 
 | Unterprojekt | Zweck |
 | --- | --- |
-| [BoardTest](BoardTest/PROJEKTUEBERSICHT.md) | Test-Firmware `1.1.0` für OLED, Buildanzeige, GPIO9-gesteuerten automatischen Testmodus, selbst gezeichnete Pfeile, ASCII-Zeichenanzeige, Spielkarten und invertierte Anzeige des ESP32-C3-OLED-Boards. |
+| [BoardTest](BoardTest/PROJEKTUEBERSICHT.md) | Test-Firmware `1.2.0` für OLED, Buildanzeige, GPIO9-gesteuerten automatischen Testmodus, projektweite Display-Library, selbst gezeichnete Pfeile, ASCII-Zeichenanzeige, Spielkarten und invertierte Anzeige des ESP32-C3-OLED-Boards. |
+
+## Projektweite Libraries
+
+| Library | Zweck |
+| --- | --- |
+| [StampDisplay](lib/StampDisplay/PROJEKTUEBERSICHT.md) | Lokale PlatformIO-Library für wiederverwendbare Display-Darstellungsklassen: Pfeile, ASCII-Zeichen und Spielkarten. |
 
 ## Projektregeln
 
@@ -37,7 +43,9 @@ Dieses Repository sammelt mehrere PlatformIO-Unterprojekte für das kleine ESP32
 
 ## Bibliotheken und Updates
 
-Bibliotheken sollen nach Möglichkeit projektlokal versioniert werden. Für U8g2 wurde am 19.05.2026 bewusst entschieden, die Bibliothek wegen ihrer Größe nicht in `lib/` zu übernehmen. Das Unterprojekt `BoardTest` verwendet deshalb die in der Boardbeschreibung empfohlene PlatformIO-Abhängigkeit `olikraus/U8g2@^2.36.12`.
+Bibliotheken sollen nach Möglichkeit projektlokal versioniert werden. Projektweit wiederverwendbare eigene Klassen liegen unter `lib/` als lokale PlatformIO-Libraries. Die Library `StampDisplay` enthält die Display-Darstellungsklassen, die bisher direkt im Unterprojekt `BoardTest` lagen.
+
+Für U8g2 wurde am 19.05.2026 bewusst entschieden, die Bibliothek wegen ihrer Größe nicht in `lib/` zu übernehmen. Das Unterprojekt `BoardTest` verwendet deshalb die in der Boardbeschreibung empfohlene PlatformIO-Abhängigkeit `olikraus/U8g2@^2.36.12`.
 
 Updateverfahren:
 

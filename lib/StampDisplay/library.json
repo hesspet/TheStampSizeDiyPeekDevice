@@ -1,0 +1,17 @@
+{
+  "name": "StampDisplay",
+  "version": "1.0.0",
+  "description": "Projektweite Display-Darstellungsklassen für das ESP32-C3-OLED-Board.",
+  "keywords": [
+    "esp32",
+    "oled",
+    "u8g2",
+    "display"
+  ],
+  "frameworks": [
+    "arduino"
+  ],
+  "platforms": [
+    "espressif32"
+  ]
+}

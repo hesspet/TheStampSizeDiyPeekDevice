@@ -1,4 +1,4 @@
-#include "ArrowDisplay.h"
+#include <StampDisplay/ArrowDisplay.h>
 
 namespace
 {
