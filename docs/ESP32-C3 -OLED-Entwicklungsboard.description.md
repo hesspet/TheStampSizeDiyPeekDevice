@@ -1,6 +1,6 @@
 ﻿---
 Datum: 19.05.2026
-Version: 1
+Version: 2
 Autor: Peter Heß, Germany (+Codex)
 ---
 # ESP32-C3-OLED-Entwicklungsboard
@@ -50,6 +50,7 @@ Wichtige Hinweise:
 - Im getesteten Setup war das Board auf `COM3` erreichbar.
 - `monitor_speed = 115200` muss zu `Serial.begin(115200)` passen.
 - Die beiden `build_flags` sind für zuverlässige Serial-Ausgaben über USB-C auf dem ESP32-C3 wichtig.
+- Diese Grundkonfiguration sollte für das Board nicht ohne Not erweitert werden. Insbesondere `monitor_dtr`, `monitor_rts`, `board_build.partitions = huge_app.csv` und zusätzliche Debug-Build-Flags wurden bei einem BoardTest-Versuch wieder entfernt, weil das Board sonst nach normalem Reset beziehungsweise nach erneutem Anstecken nicht zuverlässig als COM-Port im App-Modus erschien. Der COM-Port war dann nur noch im Bootloader-Modus über den gedrückten Boot-Button sichtbar.
 - Wenn `pio` nicht im normalen `PATH` liegt, kann PlatformIO trotzdem installiert sein. Im genutzten Setup lag `pio.exe` unter `%APPDATA%\Python\Python313\Scripts\pio.exe`.
 
 Typische Befehle:
@@ -216,6 +217,15 @@ build_flags =
 
 Ohne `ARDUINO_USB_CDC_ON_BOOT=1` kann die Firmware laufen und das Display korrekt anzeigen, während der Serial Monitor leer bleibt.
 
+Bewährte Erkenntnis aus `C:\dev\AnwesenheitsAnzeige\firmware\AnwesenheitsAnzeige.Esp32` und dem Unterprojekt `BoardTest`: Für dieses Board funktioniert die USB-Serial-Anmeldung stabil mit der schlanken PlatformIO-Konfiguration aus diesem Dokument. Wenn der COM-Port nach Reset oder nach erneutem Einstecken verschwindet und nur noch bei gedrücktem Boot-Button erscheint, zuerst folgende Punkte zurückbauen:
+
+- Keine `monitor_dtr`- oder `monitor_rts`-Einträge in `platformio.ini`.
+- Keine abweichende Partitionstabelle wie `board_build.partitions = huge_app.csv`, solange sie nicht wirklich benötigt wird.
+- Keine zusätzliche `Serial1.begin(...)`-Initialisierung nur für Debugausgaben; die sichtbaren Ausgaben sollen über USB-`Serial` laufen.
+- Keine zusätzlichen Debug-Build-Flags wie `CORE_DEBUG_LEVEL=0`, solange kein konkreter Bedarf besteht.
+
+Nach dem Zurückbauen auf die Grundkonfiguration erschien `COM6` nach dem Flashen und normalem App-Reset wieder zuverlässig als `USB VID:PID=303A:1001`.
+
 Empfohlenes Setup im Code:
 
 ```cpp
@@ -350,6 +360,7 @@ constexpr uint8_t BUTTON_PRESSED_LEVEL = LOW;
 - Falscher COM-Port in `platformio.ini` oder im Monitor-Befehl.
 - Serial Monitor noch geöffnet, während geflasht werden soll.
 - Fehlende USB-CDC-Build-Flags, wodurch `Serial.print()` unsichtbar bleibt.
+- Zu stark erweiterte PlatformIO-Konfiguration für USB-Serial. Wenn der Port im normalen App-Modus verschwindet und nur im Bootloader-Modus sichtbar ist, die Konfiguration mit der Grundkonfiguration aus dieser Datei vergleichen.
 - `localhost` als Serveradresse im ESP32-Code.
 - Zu lange Texte für das 72 x 40 OLED.
 - Buttonlogik falsch herum interpretiert, weil `INPUT_PULLUP` gedrückt als `LOW` liest.
