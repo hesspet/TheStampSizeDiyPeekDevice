@@ -44,16 +44,22 @@ Unterprojekt: `./BoardTest`
 Zweck:
 
 - Test-Firmware für das ESP32-C3-OLED-Board.
-- OLED-Test mit Buildanzeige.
-- GPIO9-Button-Test.
-- Anzeige großer Pfeile.
+- OLED-Test mit Startanzeige, Builddatum und Programmversion.
+- GPIO9 startet und stoppt einen automatischen Testmodus.
+- Selbst gezeichnete Pfeile für acht Kompassrichtungen.
+- Anzeige von ein oder zwei ASCII-Zeichen.
 - Anzeige eines vollständigen Pokerdecks inklusive Joker.
+- Normale und invertierte Anzeige mit hellem Hintergrund.
 
 Wichtige Dateien:
 
 - `BoardTest/platformio.ini`
 - `BoardTest/include/config.h`
+- `BoardTest/include/ArrowDisplay.h`
+- `BoardTest/include/AsciiCharacterDisplay.h`
 - `BoardTest/include/PlayingCardDisplay.h`
+- `BoardTest/src/ArrowDisplay.cpp`
+- `BoardTest/src/AsciiCharacterDisplay.cpp`
 - `BoardTest/src/PlayingCardDisplay.cpp`
 - `BoardTest/src/main.cpp`
 - `BoardTest/PROJEKTUEBERSICHT.md`
@@ -96,7 +102,7 @@ Die Kartenanzeige ist in einer isolierten Klasse umgesetzt:
 API:
 
 - `PlayingCardDisplay::cardCount` ist `54`.
-- `drawCard(display, cardIndex)` zeichnet eine Karte.
+- `drawCard(display, cardIndex, inverted)` zeichnet eine Karte normal oder invertiert.
 - `getCardDescription(cardIndex, buffer, bufferSize)` liefert eine deutsche Beschreibung für Debugausgaben.
 
 Deck:
@@ -120,18 +126,29 @@ Darstellung:
 - Reihenfolge auf dem Display ist Suit zuerst, dann Wert.
 - Beispiel: Herz 10 wird als großes Herz links und `X` rechts angezeigt.
 - Die Suit-Symbole werden nicht mehr aus Fonts gezeichnet, sondern mit U8g2-Primitiven selbst gerendert, weil die Font-Symbole auf dem kleinen Display zu schlecht lesbar waren.
+- Kreuz und Pik haben einen deutlich sichtbaren Stengel, damit sie auf dem monochromen Display besser von Herz unterscheidbar sind.
+
+## Pfeil- und ASCII-Anzeige
+
+- `ArrowDisplay` zeichnet Pfeile für `N`, `NO`, `O`, `SO`, `S`, `SW`, `W` und `NW` selbst mit U8g2-Primitiven.
+- `AsciiCharacterDisplay` zeichnet ein oder zwei druckbare ASCII-Zeichen groß und zentriert.
+- Beide Klassen unterstützen normale und invertierte Darstellung.
 
 ## Bedienlogik
 
-- Nach dem Start zeigt das OLED kurz `BoardTest`, `Build:` und das Builddatum.
-- Danach laufen die Testbilder über den Button GPIO9.
-- Reihenfolge:
-  - Pfeil nach oben
-  - Pfeil nach unten
-  - Pfeil nach links
-  - Pfeil nach rechts
-  - vollständiges Pokerdeck inklusive `J1` und `J2`
-  - danach wieder von vorne
+- Nach dem Start zeigt das OLED kurz `BoardTest`, `V 1.1.0`, `Build:` und das Builddatum.
+- Danach zeigt das OLED `Test bereit` und `IO9 Start`.
+- Ein Druck auf GPIO9 startet den automatischen Testmodus.
+- Während der Testmodus läuft, stoppt ein weiterer Druck auf GPIO9 die Sequenz.
+- Jede Darstellung bleibt `1000 ms` sichtbar.
+- Normale Sequenz:
+  - alle Pfeile in den acht Kompassrichtungen
+  - 16 zufällige Spielkarten inklusive möglicher Joker
+  - Zähler `1` bis `12`
+  - 10 zufällige ASCII-Einzelzeichen
+  - 10 zufällige ASCII-Zeichenpaare
+- Danach folgt dieselbe Sequenz invertiert mit hellem Hintergrund.
+- Nach der invertierten Sequenz beginnt der Ablauf wieder von vorne.
 
 ## Nützliche Befehle
 

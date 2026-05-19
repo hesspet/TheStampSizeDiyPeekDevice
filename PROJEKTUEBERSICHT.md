@@ -1,6 +1,6 @@
 ---
 Datum: 19.05.2026
-Version: 1
+Version: 4
 Autor: Peter Heß, Germany (+Codex)
 ---
 # Projektübersicht
@@ -22,7 +22,7 @@ Dieses Repository sammelt mehrere PlatformIO-Unterprojekte für das kleine ESP32
 
 | Unterprojekt | Zweck |
 | --- | --- |
-| [BoardTest](BoardTest/PROJEKTUEBERSICHT.md) | Test-Firmware für OLED, Buildanzeige und Button-Funktionen des ESP32-C3-OLED-Boards. |
+| [BoardTest](BoardTest/PROJEKTUEBERSICHT.md) | Test-Firmware `1.1.0` für OLED, Buildanzeige, GPIO9-gesteuerten automatischen Testmodus, selbst gezeichnete Pfeile, ASCII-Zeichenanzeige, Spielkarten und invertierte Anzeige des ESP32-C3-OLED-Boards. |
 
 ## Projektregeln
 

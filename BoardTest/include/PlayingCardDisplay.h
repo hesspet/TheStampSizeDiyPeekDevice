@@ -41,7 +41,7 @@ class PlayingCardDisplay
 public:
     static constexpr uint8_t cardCount = 54;
 
-    void drawCard(U8G2 &display, uint8_t cardIndex) const;
+    void drawCard(U8G2 &display, uint8_t cardIndex, bool inverted = false) const;
     void getCardDescription(uint8_t cardIndex, char *descriptionBuffer, size_t descriptionBufferSize) const;
 
 private:
@@ -54,6 +54,7 @@ private:
     const char *getRankDescription(PlayingCardRank rank) const;
     bool isJoker(PlayingCardRank rank) const;
 
+    void prepareDisplay(U8G2 &display, bool inverted) const;
     void drawNormalCard(U8G2 &display, const PlayingCard &playingCard) const;
     void drawJokerCard(U8G2 &display, PlayingCardRank rank) const;
     void drawCardSuit(U8G2 &display, PlayingCardSuit suit, uint8_t originX, uint8_t originY) const;

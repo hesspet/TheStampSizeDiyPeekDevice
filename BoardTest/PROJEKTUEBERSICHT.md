@@ -1,6 +1,6 @@
 ---
 Datum: 19.05.2026
-Version: 2
+Version: 5
 Autor: Peter Heß, Germany (+Codex)
 ---
 # BoardTest
@@ -11,14 +11,18 @@ Autor: Peter Heß, Germany (+Codex)
 
 Die Firmware prüft die zentralen Board-Funktionen:
 
+- Programmversion: `1.1.0`.
 - OLED-Initialisierung über I2C auf GPIO5 und GPIO6.
-- Startanzeige mit Programmname und Builddatum im Format `DD.MM.YYYY`.
+- Startanzeige mit Programmname, Programmversion und Builddatum im Format `DD.MM.YYYY`.
 - Button-Auswertung auf GPIO9 mit internem Pull-up.
-- Anzeige großer Pfeile aus dem U8g2-Font `u8g2_font_open_iconic_arrow_4x_t`.
+- Selbst gezeichnete große Pfeile für die Kompassrichtungen `N`, `NO`, `O`, `SO`, `S`, `SW`, `W` und `NW`.
+- Anzeige von ein oder zwei ASCII-Zeichen über eine eigene Hilfsklasse.
 - Anzeige eines vollständigen Pokerdecks mit 52 Karten plus 2 Joker.
 - Selbst gezeichnete große Spielkartensymbole für Herz, Karo, Kreuz und Pik.
 - Kartenanzeige in der Reihenfolge Farbe zuerst, dann Wert, zum Beispiel `Herz X` für Herz 10.
-- Bei jedem stabil erkannten Tastendruck wechselt die Anzeige zum nächsten Testbild.
+- GPIO9 startet und stoppt einen automatischen Testmodus.
+- Jede Testanzeige bleibt eine Sekunde sichtbar und wechselt dann automatisch zur nächsten Anzeige.
+- Der Testmodus zeigt die komplette Sequenz zuerst normal und danach invertiert mit hellem Hintergrund.
 - Serieller Programmheader über USB-Serial mit Programmname, Builddatum, Buildzeit und Debuglevel.
 - USB-Serial wartet beim Start kurz auf eine Monitor-Verbindung, damit der Startheader nach einem Reset sichtbar wird.
 
@@ -34,12 +38,37 @@ Aufrufbar sind 54 Kartenindizes:
 
 Die Werte werden angezeigt als `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `X`, `J`, `Q`, `K`. `1` steht für Ass, `X` steht für 10.
 
+## Pfeil- und ASCII-Anzeige
+
+Die Pfeilanzeige liegt isoliert in `include/ArrowDisplay.h` und `src/ArrowDisplay.cpp`.
+
+Aufrufbar sind acht Kompassrichtungen:
+
+- `CompassDirection::N`
+- `CompassDirection::NO`
+- `CompassDirection::O`
+- `CompassDirection::SO`
+- `CompassDirection::S`
+- `CompassDirection::SW`
+- `CompassDirection::W`
+- `CompassDirection::NW`
+
+Die Pfeile werden mit U8g2-Primitiven selbst gezeichnet und nutzen keine Pfeil-Fonts mehr. Die Klasse unterstützt normale und invertierte Darstellung.
+
+Die ASCII-Anzeige liegt in `include/AsciiCharacterDisplay.h` und `src/AsciiCharacterDisplay.cpp`. Sie zeichnet ein oder zwei druckbare ASCII-Zeichen groß und zentriert. Bei einem Zeichen wird dieses einzelne Zeichen in der Mitte ausgegeben. Die Klasse unterstützt normale und invertierte Darstellung.
+
+Auch `PlayingCardDisplay` unterstützt normale und invertierte Darstellung.
+
 ## Bedienung
 
-- Nach dem Flashen zeigt das OLED kurz `BoardTest`, `Build:` und das Builddatum.
-- Danach zeigt das OLED einen großen Pfeil.
-- Jeder Druck auf den Button GPIO9 schaltet eine Position weiter.
-- Die Reihenfolge ist oben, unten, links, rechts, danach das vollständige Pokerdeck inklusive `J1` und `J2`, danach wieder oben.
+- Nach dem Flashen zeigt das OLED kurz `BoardTest`, die Programmversion, `Build:` und das Builddatum.
+- Danach zeigt das OLED `Test bereit` und `IO9 Start`.
+- Ein Druck auf GPIO9 startet den automatischen Testmodus.
+- Während der Testmodus läuft, stoppt ein weiterer Druck auf GPIO9 die Sequenz.
+- Jede Anzeige bleibt `1000 ms` sichtbar.
+- Die normale Sequenz ist: alle Pfeile, 16 zufällige Spielkarten inklusive möglicher Joker, Zähler `1` bis `12`, 10 zufällige ASCII-Einzelzeichen, 10 zufällige ASCII-Zeichenpaare.
+- Danach wird dieselbe Sequenzart invertiert mit hellem Hintergrund wiederholt.
+- Nach der invertierten Sequenz beginnt der Ablauf wieder von vorne.
 
 ## Hardwarebelegung
 

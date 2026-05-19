@@ -11,6 +11,7 @@ enum class DebugLevel : uint8_t
 };
 
 constexpr const char *programName = "BoardTest";
+constexpr const char *programVersion = "1.1.0";
 constexpr DebugLevel configuredDebugLevel = DebugLevel::info;
 
 constexpr unsigned long serialBaudRate = 115200;
@@ -26,3 +27,4 @@ constexpr unsigned long buttonDebounceDurationMillis = 50;
 
 constexpr unsigned long startupScreenDurationMillis = 2500;
 constexpr unsigned long displayRefreshIntervalMillis = 100;
+constexpr unsigned long testStepDurationMillis = 1000;

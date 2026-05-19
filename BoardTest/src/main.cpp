@@ -5,10 +5,14 @@
 #include <U8g2lib.h>
 #include <Wire.h>
 
+#include "ArrowDisplay.h"
+#include "AsciiCharacterDisplay.h"
 #include "config.h"
 #include "PlayingCardDisplay.h"
 
 U8G2_SSD1306_72X40_ER_F_HW_I2C display(U8G2_R0, U8X8_PIN_NONE);
+ArrowDisplay arrowDisplay;
+AsciiCharacterDisplay asciiCharacterDisplay;
 PlayingCardDisplay playingCardDisplay;
 
 struct ButtonState
@@ -18,27 +22,51 @@ struct ButtonState
     unsigned long lastRawChangeMillis = 0;
 };
 
+enum class TestDisplayKind : uint8_t
+{
+    arrow,
+    card,
+    counter,
+    asciiSingle,
+    asciiPair
+};
+
 ButtonState buttonState;
-unsigned long lastDisplayRefreshMillis = 0;
 unsigned long startupFinishedMillis = 0;
+unsigned long currentTestStepStartedMillis = 0;
+bool testModeRunning = false;
+bool idleScreenDrawn = false;
+bool currentTestStepInverted = false;
+uint8_t currentTestStepIndex = 0;
+uint8_t currentCardIndex = 0;
+uint8_t currentCounterValue = 1;
+char currentAsciiFirstCharacter = 'A';
+char currentAsciiSecondCharacter = '\0';
+CompassDirection currentArrowDirection = CompassDirection::N;
+TestDisplayKind currentDisplayKind = TestDisplayKind::arrow;
 
-constexpr uint8_t arrowDirectionCount = 4;
-constexpr uint8_t arrowGlyphs[arrowDirectionCount] = {
-    'J', // Pfeil nach oben, Open Iconic: arrow-thick-top
-    'G', // Pfeil nach unten, Open Iconic: arrow-thick-bottom
-    'H', // Pfeil nach links, Open Iconic: arrow-thick-left
-    'I'  // Pfeil nach rechts, Open Iconic: arrow-thick-right
+constexpr CompassDirection arrowDirections[ArrowDisplay::directionCount] = {
+    CompassDirection::N,
+    CompassDirection::NO,
+    CompassDirection::O,
+    CompassDirection::SO,
+    CompassDirection::S,
+    CompassDirection::SW,
+    CompassDirection::W,
+    CompassDirection::NW
 };
 
-const char *arrowDirectionNames[arrowDirectionCount] = {
-    "Pfeil nach oben",
-    "Pfeil nach unten",
-    "Pfeil nach links",
-    "Pfeil nach rechts"
-};
-
-constexpr uint8_t displayStateCount = arrowDirectionCount + PlayingCardDisplay::cardCount;
-uint8_t currentDisplayStateIndex = 0;
+constexpr uint8_t randomCardDisplayCount = 16;
+constexpr uint8_t counterDisplayCount = 12;
+constexpr uint8_t randomSingleAsciiDisplayCount = 10;
+constexpr uint8_t randomPairAsciiDisplayCount = 10;
+constexpr uint8_t normalSequenceStepCount =
+    ArrowDisplay::directionCount
+    + randomCardDisplayCount
+    + counterDisplayCount
+    + randomSingleAsciiDisplayCount
+    + randomPairAsciiDisplayCount;
+constexpr uint8_t fullSequenceStepCount = normalSequenceStepCount * 2;
 
 const char *getDebugLevelName(DebugLevel debugLevel)
 {
@@ -139,6 +167,8 @@ void writeStartupHeader()
     writeLineToOutputs("========================================");
     writeTextToOutputs("Programm: ");
     writeLineToOutputs(programName);
+    writeTextToOutputs("Version: ");
+    writeLineToOutputs(programVersion);
     writeTextToOutputs("Builddatum: ");
     writeLineToOutputs(getEuropeanBuildDate());
     writeTextToOutputs("Buildzeit: ");
@@ -168,23 +198,200 @@ bool readButtonPressed()
     return digitalRead(buttonPin) == buttonPressedLevel;
 }
 
-void advanceDisplayState()
+char getRandomPrintableAsciiCharacter()
 {
-    currentDisplayStateIndex = (currentDisplayStateIndex + 1) % displayStateCount;
+    return static_cast<char>(random(33, 127));
+}
+
+void drawStartupScreen()
+{
+    display.clearBuffer();
+    display.setDrawColor(1);
+    display.setFont(u8g2_font_6x10_tf);
+    display.setCursor(0, 8);
+    display.print(programName);
+    display.setCursor(0, 18);
+    display.print("V ");
+    display.print(programVersion);
+    display.setCursor(0, 28);
+    display.print("Build:");
+    display.setCursor(0, 38);
+    display.print(getEuropeanBuildDate());
+    display.sendBuffer();
+}
+
+void drawIdleScreen()
+{
+    display.clearBuffer();
+    display.setDrawColor(1);
+    display.setFont(u8g2_font_6x10_tf);
+    display.setCursor(0, 14);
+    display.print("Test bereit");
+    display.setCursor(0, 30);
+    display.print("IO9 Start");
+    display.sendBuffer();
+    idleScreenDrawn = true;
+}
+
+void writeCurrentTestStepDescription()
+{
     writeTextToOutputs("Anzeige: ");
-    if (currentDisplayStateIndex < arrowDirectionCount)
+
+    if (currentTestStepInverted)
     {
-        writeLineToOutputs(arrowDirectionNames[currentDisplayStateIndex]);
+        writeTextToOutputs("invertiert, ");
     }
-    else
+
+    switch (currentDisplayKind)
     {
-        char cardDescription[24];
-        playingCardDisplay.getCardDescription(
-            currentDisplayStateIndex - arrowDirectionCount,
-            cardDescription,
-            sizeof(cardDescription));
-        writeLineToOutputs(cardDescription);
+        case TestDisplayKind::arrow:
+            writeLineToOutputs(arrowDisplay.getDirectionDescription(currentArrowDirection));
+            break;
+        case TestDisplayKind::card:
+        {
+            char cardDescription[24];
+            playingCardDisplay.getCardDescription(currentCardIndex, cardDescription, sizeof(cardDescription));
+            writeLineToOutputs(cardDescription);
+            break;
+        }
+        case TestDisplayKind::counter:
+            writeTextToOutputs("Zähler ");
+            Serial.println(currentCounterValue);
+            break;
+        case TestDisplayKind::asciiSingle:
+            writeTextToOutputs("ASCII Einzelzeichen ");
+            Serial.println(currentAsciiFirstCharacter);
+            break;
+        case TestDisplayKind::asciiPair:
+            writeTextToOutputs("ASCII Zeichenpaar ");
+            Serial.print(currentAsciiFirstCharacter);
+            Serial.println(currentAsciiSecondCharacter);
+            break;
     }
+}
+
+void prepareTestStep(uint8_t testStepIndex)
+{
+    currentTestStepInverted = testStepIndex >= normalSequenceStepCount;
+    uint8_t normalStepIndex = testStepIndex % normalSequenceStepCount;
+
+    if (normalStepIndex < ArrowDisplay::directionCount)
+    {
+        currentDisplayKind = TestDisplayKind::arrow;
+        currentArrowDirection = arrowDirections[normalStepIndex];
+        return;
+    }
+
+    normalStepIndex -= ArrowDisplay::directionCount;
+
+    if (normalStepIndex < randomCardDisplayCount)
+    {
+        currentDisplayKind = TestDisplayKind::card;
+        currentCardIndex = static_cast<uint8_t>(random(0, PlayingCardDisplay::cardCount));
+        return;
+    }
+
+    normalStepIndex -= randomCardDisplayCount;
+
+    if (normalStepIndex < counterDisplayCount)
+    {
+        currentDisplayKind = TestDisplayKind::counter;
+        currentCounterValue = normalStepIndex + 1;
+        return;
+    }
+
+    normalStepIndex -= counterDisplayCount;
+
+    if (normalStepIndex < randomSingleAsciiDisplayCount)
+    {
+        currentDisplayKind = TestDisplayKind::asciiSingle;
+        currentAsciiFirstCharacter = getRandomPrintableAsciiCharacter();
+        currentAsciiSecondCharacter = '\0';
+        return;
+    }
+
+    currentDisplayKind = TestDisplayKind::asciiPair;
+    currentAsciiFirstCharacter = getRandomPrintableAsciiCharacter();
+    currentAsciiSecondCharacter = getRandomPrintableAsciiCharacter();
+}
+
+void drawCurrentTestStep()
+{
+    display.clearBuffer();
+    display.setDrawColor(1);
+    display.setFontMode(1);
+
+    switch (currentDisplayKind)
+    {
+        case TestDisplayKind::arrow:
+            arrowDisplay.drawArrow(display, currentArrowDirection, currentTestStepInverted);
+            break;
+        case TestDisplayKind::card:
+            playingCardDisplay.drawCard(display, currentCardIndex, currentTestStepInverted);
+            break;
+        case TestDisplayKind::counter:
+        {
+            char counterText[3];
+            snprintf(counterText, sizeof(counterText), "%u", currentCounterValue);
+            asciiCharacterDisplay.drawCharacters(display, counterText, currentTestStepInverted);
+            break;
+        }
+        case TestDisplayKind::asciiSingle:
+            asciiCharacterDisplay.drawCharacters(display, currentAsciiFirstCharacter, '\0', currentTestStepInverted);
+            break;
+        case TestDisplayKind::asciiPair:
+            asciiCharacterDisplay.drawCharacters(
+                display,
+                currentAsciiFirstCharacter,
+                currentAsciiSecondCharacter,
+                currentTestStepInverted);
+            break;
+    }
+
+    display.sendBuffer();
+}
+
+void showCurrentTestStep(unsigned long currentMillis)
+{
+    prepareTestStep(currentTestStepIndex);
+    writeCurrentTestStepDescription();
+    drawCurrentTestStep();
+    currentTestStepStartedMillis = currentMillis;
+}
+
+void advanceTestStep(unsigned long currentMillis)
+{
+    currentTestStepIndex = (currentTestStepIndex + 1) % fullSequenceStepCount;
+    showCurrentTestStep(currentMillis);
+}
+
+void startTestMode(unsigned long currentMillis)
+{
+    randomSeed(micros());
+    startupFinishedMillis = 0;
+    testModeRunning = true;
+    idleScreenDrawn = false;
+    currentTestStepIndex = 0;
+    writeDebugMessage(DebugLevel::info, "Testmodus gestartet");
+    showCurrentTestStep(currentMillis);
+}
+
+void stopTestMode()
+{
+    testModeRunning = false;
+    writeDebugMessage(DebugLevel::info, "Testmodus gestoppt");
+    drawIdleScreen();
+}
+
+void handleButtonPressed(unsigned long currentMillis)
+{
+    if (testModeRunning)
+    {
+        stopTestMode();
+        return;
+    }
+
+    startTestMode(currentMillis);
 }
 
 void updateButtonState(unsigned long currentMillis)
@@ -210,45 +417,13 @@ void updateButtonState(unsigned long currentMillis)
         if (buttonState.stableButtonPressed)
         {
             writeDebugMessage(DebugLevel::info, "Button gedrückt");
-            advanceDisplayState();
+            handleButtonPressed(currentMillis);
         }
         else
         {
             writeDebugMessage(DebugLevel::debug, "Button losgelassen");
         }
     }
-}
-
-void drawStartupScreen()
-{
-    display.clearBuffer();
-    display.setFont(u8g2_font_6x10_tf);
-    display.setCursor(0, 10);
-    display.print("BoardTest");
-    display.setCursor(0, 24);
-    display.print("Build:");
-    display.setCursor(0, 38);
-    display.print(getEuropeanBuildDate());
-    display.sendBuffer();
-}
-
-void drawCurrentDisplayState()
-{
-    display.clearBuffer();
-    display.setDrawColor(1);
-    display.setFontMode(1);
-
-    if (currentDisplayStateIndex < arrowDirectionCount)
-    {
-        display.setFont(u8g2_font_open_iconic_arrow_4x_t);
-        display.drawGlyph(20, 36, arrowGlyphs[currentDisplayStateIndex]);
-    }
-    else
-    {
-        playingCardDisplay.drawCard(display, currentDisplayStateIndex - arrowDirectionCount);
-    }
-
-    display.sendBuffer();
 }
 
 void setup()
@@ -264,8 +439,6 @@ void setup()
     display.enableUTF8Print();
 
     writeStartupHeader();
-    writeTextToOutputs("Anzeige: ");
-    writeLineToOutputs(arrowDirectionNames[currentDisplayStateIndex]);
     drawStartupScreen();
     startupFinishedMillis = millis() + startupScreenDurationMillis;
 }
@@ -276,14 +449,18 @@ void loop()
 
     updateButtonState(currentMillis);
 
-    if (currentMillis < startupFinishedMillis)
+    if (!testModeRunning)
     {
+        if (!idleScreenDrawn && currentMillis >= startupFinishedMillis)
+        {
+            drawIdleScreen();
+        }
+
         return;
     }
 
-    if (currentMillis - lastDisplayRefreshMillis >= displayRefreshIntervalMillis)
+    if (currentMillis - currentTestStepStartedMillis >= testStepDurationMillis)
     {
-        lastDisplayRefreshMillis = currentMillis;
-        drawCurrentDisplayState();
+        advanceTestStep(currentMillis);
     }
 }
