@@ -1,11 +1,11 @@
 ﻿---
-Datum: 19.05.2026
-Version: 2
+Datum: 21.05.2026
+Version: 3
 Autor: Peter Heß, Germany (+Codex)
 ---
 # ESP32-C3-OLED-Entwicklungsboard
 
-Stand: 19.05.2026
+Stand: 21.05.2026
 
 Diese Datei beschreibt die Integration des kleinen ESP32-C3-OLED-Entwicklungsboards für die Wiederverwendung in anderen ESP32-Projekten. Der Fokus liegt auf Board, Display, Button, PlatformIO, USB-Serial und typischen Stolperstellen.
 
@@ -24,6 +24,8 @@ Diese Datei beschreibt die Integration des kleinen ESP32-C3-OLED-Entwicklungsboa
 - Serial Monitor: 115200 Baud über USB-CDC.
 
 Das Board ist für kleine Statusanzeigen gut geeignet. Die nutzbare Bildschirmfläche ist sehr klein, deshalb funktionieren kurze Texte, Statussymbole und zweizeilige Anzeigen deutlich besser als längere Meldungen.
+
+Im Repository nutzt `BlePrompter` dieses Board als BLE-gesteuertes OLED-Anzeigegerät. Für eine spätere JavaScript-Seite sind die Web-Bluetooth-Details in `../BlePrompter/WEB_BLUETOOTH.md` dokumentiert. Wichtig sind die Nordic-UART-UUIDs und kurze Textbefehle wie `CHX`, `AN`, `SOK`, `I1`, `I0` und `CL`.
 
 ## PlatformIO-Grundkonfiguration
 

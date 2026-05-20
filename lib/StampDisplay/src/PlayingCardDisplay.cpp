@@ -54,13 +54,13 @@ const char *PlayingCardDisplay::getSuitDescription(PlayingCardSuit suit) const
     switch (suit)
     {
         case PlayingCardSuit::hearts:
-            return "Herz";
+            return "Heart";
         case PlayingCardSuit::diamonds:
-            return "Karo";
+            return "Diamond";
         case PlayingCardSuit::clubs:
-            return "Kreuz";
+            return "Clubs";
         case PlayingCardSuit::spades:
-            return "Pik";
+            return "Spade";
     }
 
     return "Unbekannt";
@@ -110,7 +110,7 @@ const char *PlayingCardDisplay::getRankDescription(PlayingCardRank rank) const
     switch (rank)
     {
         case PlayingCardRank::ace:
-            return "Ass";
+            return "Ace";
         case PlayingCardRank::two:
             return "2";
         case PlayingCardRank::three:
@@ -128,13 +128,13 @@ const char *PlayingCardDisplay::getRankDescription(PlayingCardRank rank) const
         case PlayingCardRank::nine:
             return "9";
         case PlayingCardRank::ten:
-            return "10";
+            return "Ten";
         case PlayingCardRank::jack:
-            return "Bube";
+            return "Jack";
         case PlayingCardRank::queen:
-            return "Dame";
+            return "Queen";
         case PlayingCardRank::king:
-            return "König";
+            return "King";
         case PlayingCardRank::jokerOne:
             return "Joker 1";
         case PlayingCardRank::jokerTwo:

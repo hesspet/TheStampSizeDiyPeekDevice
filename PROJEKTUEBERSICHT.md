@@ -1,6 +1,6 @@
 ---
-Datum: 19.05.2026
-Version: 5
+Datum: 21.05.2026
+Version: 7
 Autor: Peter Heß, Germany (+Codex)
 ---
 # Projektübersicht
@@ -23,12 +23,30 @@ Dieses Repository sammelt mehrere PlatformIO-Unterprojekte für das kleine ESP32
 | Unterprojekt | Zweck |
 | --- | --- |
 | [BoardTest](BoardTest/PROJEKTUEBERSICHT.md) | Test-Firmware `1.2.0` für OLED, Buildanzeige, GPIO9-gesteuerten automatischen Testmodus, projektweite Display-Library, selbst gezeichnete Pfeile, ASCII-Zeichenanzeige, Spielkarten und invertierte Anzeige des ESP32-C3-OLED-Boards. |
+| [BlePrompter](BlePrompter/PROJEKTUEBERSICHT.md) | BLE-UART-Firmware `1.3.0` mit Nordic UART Service für Android-Apps, MacroDroid/BLE-Plugins und Terminal-Makros. Zeigt Text, Pfeile, Symbole und Spielkarten auf dem OLED an. |
+
+## BlePrompter als BLE-Device
+
+`BlePrompter` ist das Unterprojekt für externe Steuerung per BLE. Es eignet sich als Zielgerät für:
+
+- Android-Apps wie nRF Connect oder Serial Bluetooth Terminal.
+- MacroDroid über ein BLE-Plugin.
+- Eine spätere JavaScript/Web-Bluetooth-Seite im Browser.
+
+BLE-Kenndaten:
+
+- Bluetooth-Name: `BlePrompter`
+- Nordic-UART-Service: `6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
+- RX-Characteristic zum Schreiben: `6E400002-B5A3-F393-E0A9-E50E24DCCA9E`
+- TX-Characteristic für Antworten: `6E400003-B5A3-F393-E0A9-E50E24DCCA9E`
+
+Die Befehlssyntax ist englisch und makrotauglich. Beispiele: `TEXT Door|open`, `SYMBOL OK`, `ARROW NE`, `CHX`, `I1`, `I0`, `CL`. Für Web-Bluetooth-Implementierungen liegt ein eigener Einstieg unter [BlePrompter/WEB_BLUETOOTH.md](BlePrompter/WEB_BLUETOOTH.md).
 
 ## Projektweite Libraries
 
 | Library | Zweck |
 | --- | --- |
-| [StampDisplay](lib/StampDisplay/PROJEKTUEBERSICHT.md) | Lokale PlatformIO-Library für wiederverwendbare Display-Darstellungsklassen: Pfeile, ASCII-Zeichen und Spielkarten. |
+| [StampDisplay](lib/StampDisplay/PROJEKTUEBERSICHT.md) | Lokale PlatformIO-Library für wiederverwendbare Display-Darstellungsklassen: Pfeile, Symbole und Spielkarten. |
 
 ## Projektregeln
 
@@ -45,7 +63,9 @@ Dieses Repository sammelt mehrere PlatformIO-Unterprojekte für das kleine ESP32
 
 Bibliotheken sollen nach Möglichkeit projektlokal versioniert werden. Projektweit wiederverwendbare eigene Klassen liegen unter `lib/` als lokale PlatformIO-Libraries. Die Library `StampDisplay` enthält die Display-Darstellungsklassen, die bisher direkt im Unterprojekt `BoardTest` lagen.
 
-Für U8g2 wurde am 19.05.2026 bewusst entschieden, die Bibliothek wegen ihrer Größe nicht in `lib/` zu übernehmen. Das Unterprojekt `BoardTest` verwendet deshalb die in der Boardbeschreibung empfohlene PlatformIO-Abhängigkeit `olikraus/U8g2@^2.36.12`.
+Für U8g2 wurde am 19.05.2026 bewusst entschieden, die Bibliothek wegen ihrer Größe nicht in `lib/` zu übernehmen. Die Unterprojekte verwenden deshalb die in der Boardbeschreibung empfohlene PlatformIO-Abhängigkeit `olikraus/U8g2@^2.36.12`.
+
+Für `BlePrompter` wird `h2zero/NimBLE-Arduino@^1.4.3` per PlatformIO `lib_deps` genutzt. Grund ist, dass die BLE-Stack-Abhängigkeit projektspezifisch ist und PlatformIO sie reproduzierbar versioniert herunterladen kann.
 
 Updateverfahren:
 

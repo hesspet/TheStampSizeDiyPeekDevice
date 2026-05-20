@@ -16,6 +16,7 @@
 - Generischer Projektkontext liegt in `./PROJEKTUEBERSICHT.md`.
 - Jedes Unterprojekt muss eine eigene `PROJEKTUEBERSICHT.md` besitzen.
 - Technische Hardwarebeschreibung: `./docs/ESP32-C3 -OLED-Entwicklungsboard.description.md`
+- BLE/Web-Bluetooth-Kontext für das Steuerungsprojekt liegt in `./BlePrompter/WEB_BLUETOOTH.md`.
 
 Die Hardwarebeschreibung enthält:
 
@@ -34,8 +35,59 @@ Die Hardwarebeschreibung enthält:
 - Bei `none` soll beim Start trotzdem immer ein kurzer Programmheader mit Compiledatum, Name und ggf. aktueller Konfiguration ausgegeben werden.
 - Wenn ein Projekt mit WiFi arbeitet, immer ein Konfigurationssystem mit AP vorsehen. Dafür sollen nach Möglichkeit fertige Frameworks genutzt werden.
 - Projektbibliotheken sollen grundsätzlich unter `./lib` heruntergeladen und ins Git übernommen werden.
-- Ausnahme: Für `BoardTest` wird U8g2 bewusst per PlatformIO `lib_deps` genutzt, weil die Bibliothek groß ist.
+- Ausnahme: U8g2 wird bewusst per PlatformIO `lib_deps` genutzt, weil die Bibliothek groß ist.
+- Ausnahme: `BlePrompter` nutzt `h2zero/NimBLE-Arduino@^1.4.3` per PlatformIO `lib_deps`, weil die BLE-Stack-Abhängigkeit projektspezifisch und reproduzierbar versioniert sein soll.
 - Ein Updateverfahren für Bibliotheken muss in `./PROJEKTUEBERSICHT.md` beschrieben sein.
+
+## Aktueller Stand: BlePrompter
+
+Unterprojekt: `./BlePrompter`
+
+Zweck:
+
+- BLE-UART-Firmware für das ESP32-C3-OLED-Board.
+- Externe Steuerung ohne native Smartphone-App.
+- Geeignet für Android-Apps, MacroDroid mit BLE-Plugin und JavaScript/Web Bluetooth.
+- OLED-Anzeige für Text, Symbole, Pfeile und Spielkarten.
+- Kein automatischer Testmodus.
+- Startbild mit `BlePrompter`, Versionsnummer und Builddatum.
+
+Wichtige Dateien:
+
+- `BlePrompter/platformio.ini`
+- `BlePrompter/include/config.h`
+- `BlePrompter/src/main.cpp`
+- `BlePrompter/PROJEKTUEBERSICHT.md`
+- `BlePrompter/BEFEHLE.md`
+- `BlePrompter/WEB_BLUETOOTH.md`
+
+BLE-Konfiguration:
+
+- Bluetooth-Name: `BlePrompter`
+- Protokoll: BLE-UART kompatibel zum Nordic UART Service
+- Service-UUID: `6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
+- RX-Characteristic zum Schreiben: `6E400002-B5A3-F393-E0A9-E50E24DCCA9E`
+- TX-Characteristic für Antworten: `6E400003-B5A3-F393-E0A9-E50E24DCCA9E`
+- Pairing: einfaches BLE-Bonding ohne Passkey.
+
+Web-Bluetooth-Hinweise:
+
+- JavaScript soll `navigator.bluetooth.requestDevice(...)` verwenden.
+- Der Nordic-UART-Service muss in `optionalServices` stehen.
+- Befehle werden als UTF-8-Text per `TextEncoder` in die RX-Characteristic geschrieben.
+- Web Bluetooth braucht einen sicheren Kontext, also HTTPS oder `localhost`.
+- Die Geräteauswahl muss über eine Benutzeraktion gestartet werden.
+
+Befehlssyntax:
+
+- Die Syntax ist bewusst englisch.
+- Langbefehle: `TEXT`, `SYMBOL`, `ARROW`, `CARD`, `INVERT`, `CLEAR`, `HELP`.
+- Kurzbefehle: `SA`, `SOK`, `AN`, `ANE`, `ASW`, `CHX`, `CD7`, `CCJ`, `CSK`, `CJ1`, `I1`, `I0`, `CL`, `H`.
+- `C` steht in Kurzbefehlen für `CARD`.
+- `A` steht in Kurzbefehlen für `ARROW`.
+- `S` steht in Kurzbefehlen für `SYMBOL`.
+- `H` steht in Kurzbefehlen für `HELP`.
+- Bei Karten bleibt `X` die sichtbare 10.
 
 ## Aktueller Stand: BoardTest
 
@@ -55,14 +107,14 @@ Wichtige Dateien:
 
 - `BoardTest/platformio.ini`
 - `BoardTest/include/config.h`
-- `BoardTest/include/ArrowDisplay.h`
-- `BoardTest/include/AsciiCharacterDisplay.h`
-- `BoardTest/include/PlayingCardDisplay.h`
-- `BoardTest/src/ArrowDisplay.cpp`
-- `BoardTest/src/AsciiCharacterDisplay.cpp`
-- `BoardTest/src/PlayingCardDisplay.cpp`
 - `BoardTest/src/main.cpp`
 - `BoardTest/PROJEKTUEBERSICHT.md`
+- `lib/StampDisplay/include/StampDisplay/ArrowDisplay.h`
+- `lib/StampDisplay/include/StampDisplay/AsciiCharacterDisplay.h`
+- `lib/StampDisplay/include/StampDisplay/PlayingCardDisplay.h`
+- `lib/StampDisplay/src/ArrowDisplay.cpp`
+- `lib/StampDisplay/src/AsciiCharacterDisplay.cpp`
+- `lib/StampDisplay/src/PlayingCardDisplay.cpp`
 
 Hardwarebelegung:
 
@@ -96,14 +148,14 @@ USB/COM-Erkenntnis:
 
 Die Kartenanzeige ist in einer isolierten Klasse umgesetzt:
 
-- Header: `BoardTest/include/PlayingCardDisplay.h`
-- Implementierung: `BoardTest/src/PlayingCardDisplay.cpp`
+- Header: `lib/StampDisplay/include/StampDisplay/PlayingCardDisplay.h`
+- Implementierung: `lib/StampDisplay/src/PlayingCardDisplay.cpp`
 
 API:
 
 - `PlayingCardDisplay::cardCount` ist `54`.
 - `drawCard(display, cardIndex, inverted)` zeichnet eine Karte normal oder invertiert.
-- `getCardDescription(cardIndex, buffer, bufferSize)` liefert eine deutsche Beschreibung für Debugausgaben.
+- `getCardDescription(cardIndex, buffer, bufferSize)` liefert eine englische Pokerbeschreibung für Debugausgaben und BLE-Kontext.
 
 Deck:
 
@@ -113,20 +165,20 @@ Deck:
 
 Reihenfolge:
 
-- Erst Herz, dann Karo, Kreuz, Pik.
+- Erst Heart, dann Diamond, Clubs, Spade.
 - Pro Farbe: `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `X`, `J`, `Q`, `K`.
-- `1` steht für Ass.
+- `1` steht für Ace.
 - `X` steht für 10.
-- `J` steht für Jack/Bube.
-- `Q` steht für Queen/Dame.
-- `K` steht für King/König.
+- `J` steht für Jack.
+- `Q` steht für Queen.
+- `K` steht für King.
 
 Darstellung:
 
 - Reihenfolge auf dem Display ist Suit zuerst, dann Wert.
-- Beispiel: Herz 10 wird als großes Herz links und `X` rechts angezeigt.
+- Beispiel: Heart 10 wird als großes Heart-Symbol links und `X` rechts angezeigt.
 - Die Suit-Symbole werden nicht mehr aus Fonts gezeichnet, sondern mit U8g2-Primitiven selbst gerendert, weil die Font-Symbole auf dem kleinen Display zu schlecht lesbar waren.
-- Kreuz und Pik haben einen deutlich sichtbaren Stengel, damit sie auf dem monochromen Display besser von Herz unterscheidbar sind.
+- Clubs und Spade haben einen deutlich sichtbaren Stengel, damit sie auf dem monochromen Display besser von Heart unterscheidbar sind.
 
 ## Pfeil- und ASCII-Anzeige
 

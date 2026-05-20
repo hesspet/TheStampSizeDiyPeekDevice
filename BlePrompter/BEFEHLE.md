@@ -1,0 +1,245 @@
+---
+Datum: 21.05.2026
+Version: 5
+Autor: Peter Heß, Germany (+Codex)
+---
+
+# BlePrompter Commands
+
+`BlePrompter` nimmt Befehle über BLE-UART entgegen. Das Profil ist kompatibel zum Nordic UART Service.
+
+## BLE-Verbindung
+
+- Bluetooth-Name: `BlePrompter`
+- Service-UUID: `6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
+- RX-Characteristic zum Schreiben: `6E400002-B5A3-F393-E0A9-E50E24DCCA9E`
+- TX-Characteristic für Antworten: `6E400003-B5A3-F393-E0A9-E50E24DCCA9E`
+- Pairing: einfaches BLE-Bonding ohne Passkey. Apps können sich verbinden und bei Bedarf koppeln.
+
+In Android-Apps wie nRF Connect, Serial Bluetooth Terminal oder MacroDroid-BLE-Plugins werden die Befehle als Text an die RX-Characteristic geschrieben. Ein Zeilenumbruch ist erlaubt, aber nicht erforderlich.
+
+Für JavaScript/Web Bluetooth gelten dieselben Befehle. Die Webseite schreibt UTF-8-codierten Text in die RX-Characteristic. Details für die spätere JavaScript-Seite stehen in `WEB_BLUETOOTH.md`.
+
+## Kurzbefehle für Makros
+
+Alle Befehle sind unabhängig von Groß- und Kleinschreibung. `chx`, `ChX` und `CHX` sind also gleichwertig.
+
+Die Kurzsyntax nutzt eine einheitliche englische Sprachbasis:
+
+| Kurzform | Bedeutung |
+| --- | --- |
+| `H` | Help senden |
+| `CL` | Display löschen |
+| `I1` | invertierte Darstellung einschalten |
+| `I0` | invertierte Darstellung ausschalten |
+| `SA` | Symbol `A` anzeigen |
+| `SOK` | Symbolpaar `OK` anzeigen |
+| `AN` | Arrow North anzeigen |
+| `ASW` | Arrow Southwest anzeigen |
+| `CHX` | Card Heart 10 anzeigen |
+| `CJ1` | Joker 1 anzeigen |
+
+## Clear
+
+```text
+CLEAR
+```
+
+Aliasse:
+
+```text
+CLS
+CL
+```
+
+Löscht die OLED-Anzeige.
+
+## Text
+
+```text
+TEXT Hello
+```
+
+Zeilen können mit `|` getrennt werden:
+
+```text
+TEXT Line 1|Line 2|Line 3|Line 4
+```
+
+Das Display ist sehr klein. Gut lesbar sind ungefähr 12 Zeichen pro Zeile und maximal 4 Zeilen.
+
+Alias:
+
+```text
+TXT Hello
+```
+
+## Symbol
+
+```text
+SYMBOL A
+SYMBOL OK
+```
+
+Aliasse:
+
+```text
+SYM OK
+SA
+SOK
+```
+
+Es werden ein oder zwei druckbare ASCII-Zeichen groß und zentriert angezeigt. Symbol-Ausgaben werden immer in Großbuchstaben angezeigt.
+
+## Arrow
+
+```text
+ARROW N
+ARROW NE
+ARROW E
+ARROW SE
+ARROW S
+ARROW SW
+ARROW W
+ARROW NW
+```
+
+Kurzformen:
+
+```text
+AN
+ANE
+AE
+ASE
+AS
+ASW
+AW
+ANW
+```
+
+## Card
+
+Karten können über ihren Index `0` bis `53` angezeigt werden:
+
+```text
+CARD 0
+CARD 52
+```
+
+Alternativ kann Farbe und Wert angegeben werden:
+
+```text
+CARD Heart A
+CARD Heart X
+CARD Diamond 7
+CARD Clubs Jack
+CARD Spade King
+CARD J1
+CARD J2
+```
+
+Kurzformen beginnen immer mit `C`:
+
+```text
+CHX
+CD7
+CCJ
+CCQ
+CSK
+CJ1
+CJ2
+```
+
+Aufbau:
+
+- erstes Zeichen `C`: Card
+- zweites Zeichen: Suit
+- drittes Zeichen: Rank
+
+Suits in Kurzform:
+
+- `H`: Heart
+- `D`: Diamond
+- `C`: Clubs
+- `S`: Spade
+
+Ranks in Kurzform:
+
+- `1` oder `A`: Ace
+- `2` bis `9`
+- `X`: 10
+- `J`: Jack
+- `Q`: Queen
+- `K`: King
+- `J1`: Joker 1 mit komplettem Befehl `CJ1`
+- `J2`: Joker 2 mit komplettem Befehl `CJ2`
+
+Suits:
+
+- `Heart`
+- `Diamond`
+- `Clubs`
+- `Spade`
+
+Ranks:
+
+- `1`, `A` oder `Ace`
+- `2` bis `9`
+- `10` oder `X`
+- `J` oder `Jack`
+- `Q` oder `Queen`
+- `K` oder `King`
+- `J1` oder `Joker 1`
+- `J2` oder `Joker 2`
+
+## Invert
+
+```text
+INVERT ON
+INVERT OFF
+```
+
+Aliasse:
+
+```text
+INV ON
+INV OFF
+I1
+I0
+```
+
+Die Einstellung gilt für die folgenden Anzeige-Befehle.
+
+## Help
+
+```text
+HELP
+```
+
+Aliasse:
+
+```text
+?
+H
+```
+
+Sendet eine kurze Befehlsübersicht über die TX-Characteristic zurück.
+
+## Beispiele für MacroDroid
+
+Für MacroDroid kann ein BLE-Plugin genutzt werden, das den Nordic UART Service beschreiben kann. Jede Aktion sendet dann genau einen Textbefehl, zum Beispiel:
+
+```text
+TEXT Door|open
+ARROW NE
+SYMBOL OK
+CLEAR
+ANE
+SOK
+CHX
+I1
+I0
+CL
+```
+
+Für Makro-Buttons in Serial Bluetooth Terminal eignen sich dieselben Befehle.

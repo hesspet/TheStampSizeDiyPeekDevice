@@ -1,6 +1,6 @@
 ---
-Datum: 19.05.2026
-Version: 6
+Datum: 21.05.2026
+Version: 7
 Autor: Peter Heß, Germany (+Codex)
 ---
 # BoardTest
@@ -18,8 +18,8 @@ Die Firmware prüft die zentralen Board-Funktionen:
 - Selbst gezeichnete große Pfeile für die Kompassrichtungen `N`, `NO`, `O`, `SO`, `S`, `SW`, `W` und `NW`.
 - Anzeige von ein oder zwei ASCII-Zeichen über eine eigene Hilfsklasse.
 - Anzeige eines vollständigen Pokerdecks mit 52 Karten plus 2 Joker.
-- Selbst gezeichnete große Spielkartensymbole für Herz, Karo, Kreuz und Pik.
-- Kartenanzeige in der Reihenfolge Farbe zuerst, dann Wert, zum Beispiel `Herz X` für Herz 10.
+- Selbst gezeichnete große Spielkartensymbole für Heart, Diamond, Clubs und Spade.
+- Kartenanzeige in der Reihenfolge Suit zuerst, dann Wert, zum Beispiel `Heart X` für Heart 10.
 - GPIO9 startet und stoppt einen automatischen Testmodus.
 - Jede Testanzeige bleibt eine Sekunde sichtbar und wechselt dann automatisch zur nächsten Anzeige.
 - Der Testmodus zeigt die komplette Sequenz zuerst normal und danach invertiert mit hellem Hintergrund.
@@ -51,11 +51,11 @@ Die Kartenlogik liegt isoliert in `../lib/StampDisplay/include/StampDisplay/Play
 
 Aufrufbar sind 54 Kartenindizes:
 
-- `0` bis `51`: normales Pokerdeck mit den Farben Herz, Karo, Kreuz und Pik.
+- `0` bis `51`: normales Pokerdeck mit den Suits Heart, Diamond, Clubs und Spade.
 - `52`: Joker 1, angezeigt als `J1`.
 - `53`: Joker 2, angezeigt als `J2`.
 
-Die Werte werden angezeigt als `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `X`, `J`, `Q`, `K`. `1` steht für Ass, `X` steht für 10.
+Die Werte werden angezeigt als `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `X`, `J`, `Q`, `K`. `1` steht für Ace, `X` steht für 10.
 
 ## Pfeil- und ASCII-Anzeige
 

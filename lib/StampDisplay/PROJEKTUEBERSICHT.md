@@ -1,6 +1,6 @@
 ---
-Datum: 19.05.2026
-Version: 1
+Datum: 21.05.2026
+Version: 3
 Autor: Peter Heß, Germany (+Codex)
 ---
 # StampDisplay
@@ -12,9 +12,11 @@ Autor: Peter Heß, Germany (+Codex)
 Die Library bündelt Darstellungslogik, die von mehreren Unterprojekten genutzt werden kann:
 
 - große Pfeile für acht Kompassrichtungen.
-- ein oder zwei große ASCII-Zeichen.
-- Spielkarten eines vollständigen Pokerdecks inklusive zwei Joker.
+- ein oder zwei große Symbole auf ASCII-Basis.
+- Spielkarten eines vollständigen Pokerdecks inklusive zwei Joker mit englischen Pokerbezeichnungen.
 - normale und invertierte Darstellung mit hellem Hintergrund.
+
+Die Spielkartendarstellung wird von `BoardTest` und `BlePrompter` gemeinsam genutzt. Für `BlePrompter` ist wichtig, dass die Anzeige zur englischen BLE-Befehlssyntax passt: `Heart`, `Diamond`, `Clubs`, `Spade`, `Ace`, `Jack`, `Queen`, `King`; `X` bleibt die sichtbare 10.
 
 ## Dateien
 
@@ -22,8 +24,8 @@ Die Library bündelt Darstellungslogik, die von mehreren Unterprojekten genutzt 
 | --- | --- |
 | `include/StampDisplay/ArrowDisplay.h` | Öffentliche API für Pfeildarstellung. |
 | `src/ArrowDisplay.cpp` | Implementierung der Pfeildarstellung. |
-| `include/StampDisplay/AsciiCharacterDisplay.h` | Öffentliche API für ASCII-Zeichendarstellung. |
-| `src/AsciiCharacterDisplay.cpp` | Implementierung der ASCII-Zeichendarstellung. |
+| `include/StampDisplay/AsciiCharacterDisplay.h` | Öffentliche API für Symboldarstellung auf ASCII-Basis. |
+| `src/AsciiCharacterDisplay.cpp` | Implementierung der Symboldarstellung auf ASCII-Basis. |
 | `include/StampDisplay/PlayingCardDisplay.h` | Öffentliche API für Spielkartendarstellung. |
 | `src/PlayingCardDisplay.cpp` | Implementierung der Spielkartendarstellung. |
 | `library.json` | PlatformIO-Metadaten der lokalen Library. |
