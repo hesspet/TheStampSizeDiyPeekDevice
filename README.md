@@ -10,6 +10,26 @@ Das Gerät zeigt kurze Hinweise auf einem sehr kleinen OLED-Display an. Das kön
 
 Die Firmware `BlePrompter` macht aus dem ESP32-C3-OLED-Board ein kleines Bluetooth-Anzeigegerät. Der passende Web-Client bietet eine einfache Oberfläche für Pfeile, Karten und Symbole. Wer lieber mit Android-Apps oder Automatisierung arbeitet, kann dieselben Befehle auch über BLE-Tools oder MacroDroid senden.
 
+## Bilder
+
+![](./images/Anzeige_2.jpg)
+
+![Anzeige_4](./images/Anzeige_4.jpg)
+
+![Anzeige_Arrow_Invertiert](./images/Anzeige_Arrow_Invertiert.jpg)
+
+![Anzeige_CC5](./images/Anzeige_CC5.jpg)
+
+![Anzeige_CDJ](./images/Anzeige_CDJ.jpg)
+
+![Anzeige_CH6](./images/Anzeige_CH6.jpg)
+
+![Anzeige_CS1](./images/Anzeige_CS1.jpg)
+
+![Anzeige_CSQ](./images/Anzeige_CSQ.jpg)
+
+![Anzeige_Text_V6.](./images/Anzeige_Text_V6..jpg)
+
 ## Was das Gerät anzeigen kann
 
 - kurze Texte
