@@ -26,21 +26,48 @@ Hinweis: Auf den Board-Fotos ist auf dem OLED-Display noch die Schutzfolie angeb
 
 ## Was das Gerät anzeigen kann
 
-- kurze Texte
 - einzelne Symbole oder Symbolpaare
 - Pfeile in acht Richtungen
 - Spielkarten inklusive Joker
 - normale oder invertierte Anzeige
+- kurze Texte, in der Praxis wegen der kleinen Schrift eher für kurze Hinweise geeignet
+- TBD: weitere Symbole oder kleine Bilder. Der Code liegt vor und kann nach eigenem Bedarf erweitert werden.
+- TBD: Tastenfunktionen. Auf dem Board steht eine Taste zur Verfügung, die später für Rückmeldungen oder Blätterfunktionen genutzt werden könnte.
 
 Das Display ist bewusst klein. Es eignet sich nicht für lange Nachrichten, sondern für klare, schnell erkennbare Hinweise. Genau das macht es für Vorführsituationen interessant.
 
 ## Einstieg für Einsteiger
 
-Wenn du das Projekt zum ersten Mal öffnest, beginne mit der DIY-Anleitung:
+Wenn du das Projekt zum ersten Mal umsetzen möchtest, beginne mit der DIY-Anleitung:
 
 [docs/DiyAnleitung.md](docs/DiyAnleitung.md)
 
 Dort steht Schritt für Schritt, welches Material benötigt wird, wie die Firmware kompiliert wird, wie sie auf das Board kommt und wie der Client genutzt wird. Die Anleitung ist bewusst für Laien geschrieben.
+
+## Kostenübersicht / Quellen
+
+Der hier vorgestellte Prototyp nutzt folgende Materialquellen. Preise sind nur grobe Richtwerte und können sich je nach Händler, Versand und Verfügbarkeit ändern.
+
+- Board, ca. 5 Euro
+  - Amazon: https://www.amazon.de/Entwicklungsboard%EF%BC%8Cmit-0-42inch-Unterst%C3%BCtzt-Bluetooth-Sensornetzwerke/dp/B0FGPRSCNH
+  - AliExpress, dort wurde das Board für diesen Prototyp gekauft: https://de.aliexpress.com/item/1005009157602185.html?spm=a2g0o.order_list.order_list_main.263.7f925c5f3yhoAs&gatewayAdapt=glo2deu
+- Akku, ca. 0,50 Euro pro Stück
+  - Zum Zeitpunkt des Projekts war der Akku bei Pollin in Deutschland sehr günstig erhältlich: https://www.pollin.de/p/lithium-polymer-akku-882734p-3-7-v-780-mah-5-stueck-273708
+  - Hinweis: Der Akku ist mit 80 mAh angegeben, der Aufdruck nennt 77 mAh.
+- Ladeadapter, ca. 2 Euro
+  - Pollin: https://www.pollin.de/p/daypower-lademodul-fuer-lithium-akkus-m-ll-tp4056-351427
+- Kleinteile, grob 2 Euro aus der Bastelkiste
+  - Stiftleisten
+  - USB-Kabel für den Ladeadapter
+  - 16-kOhm-Widerstand für den Umbau des Ladeadapters
+
+Optional kann das Projekt mit einer Lösung wie `Ring of Invisibility` von Marcus Anthony kombiniert werden. Dafür fallen zusätzliche Materialkosten von ungefähr 15 Euro für den Ring sowie 5 US-Dollar für den Trick bei Penguin Magic an: https://www.penguinmagic.com/p/21489
+
+Hinweis: Auch wenn im Demo-Video möglicherweise die Funktionsweise des Rings sichtbar wird, kauft bitte den Trick bei Marcus. Die 5 Euro tun niemandem weh. Danke.
+
+### Gesamtkosten ohne den Ring
+
+Mit den genannten Quellen liegen die Gesamtkosten ohne Ring unter 10 Euro. Falls die günstigen Akkus nicht mehr erhältlich sind, sind eher ungefähr 15 Euro realistisch.
 
 ## Für technische Details
 
@@ -169,27 +196,14 @@ Der aktuelle Schwerpunkt liegt auf:
 
 Das Projekt ist damit eine Grundlage zum Weiterbauen. Es soll nicht nur funktionieren, sondern auch nachvollziehbar bleiben.
 
-## Unterstützung
+## Roadmap / TBD
 
-Wenn dir dieses Projekt hilft, eine eigene Idee, Probe oder Routine umzusetzen, kannst du die Weiterentwicklung später gern unterstützen. Typische Wege wären:
+Offene Punkte, die noch beschrieben oder umgesetzt werden sollen:
 
-- ein PayPal-Spendenlink
-- eine `Buy Me a Coffee`-Seite
-- GitHub Sponsors
-- ein kurzer Hinweis, wo und wie du das Projekt eingesetzt hast
+- TBD: Das Board besitzt keinen eigenen Ladeadapter für den kleinen Akku. Zum Laden wird ein externer, handelsüblicher Ladeadapter genutzt, der für den verwendeten kleinen Akku angepasst werden muss. Die Beschreibung dieses Umbaus folgt noch.
 
-Ein passender Spendenhinweis könnte später so aussehen:
+## Unterstützung / Buy Me a Coffee
 
-```text
-Wenn dir The Stamp Size Diy Peek Device geholfen hat, freue ich mich über einen Kaffee:
-https://www.buymeacoffee.com/<dein-name>
-```
+Wenn dir `The Stamp Size Diy Peek Device` hilft, eine eigene Idee, einen Effekt oder eine Routine umzusetzen, freue ich mich über Unterstützung:
 
-Oder als PayPal-Variante:
-
-```text
-Unterstützung per PayPal:
-https://paypal.me/<dein-name>
-```
-
-Noch sind hier keine echten Zahlungslinks eingetragen. Das ist Absicht, damit keine Platzhalter versehentlich als funktionierende Spendenziele verstanden werden.
+[Buy Me a Coffee](https://buymeacoffee.com/hesspet)
