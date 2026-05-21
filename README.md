@@ -12,23 +12,16 @@ Die Firmware `BlePrompter` macht aus dem ESP32-C3-OLED-Board ein kleines Bluetoo
 
 ## Bilder
 
-![](./images/Anzeige_2.jpg)
+Die Bilder sind als kleine Vorschau angelegt. Ein Klick auf ein Bild öffnet die größere Originaldatei.
 
-![Anzeige_4](./images/Anzeige_4.jpg)
-
-![Anzeige_Arrow_Invertiert](./images/Anzeige_Arrow_Invertiert.jpg)
-
-![Anzeige_CC5](./images/Anzeige_CC5.jpg)
-
-![Anzeige_CDJ](./images/Anzeige_CDJ.jpg)
-
-![Anzeige_CH6](./images/Anzeige_CH6.jpg)
-
-![Anzeige_CS1](./images/Anzeige_CS1.jpg)
-
-![Anzeige_CSQ](./images/Anzeige_CSQ.jpg)
-
-![Anzeige_Text_V6.](./images/Anzeige_Text_V6..jpg)
+| | | | |
+| --- | --- | --- | --- |
+| <a href="./images/Anzeige_2.jpg"><img src="./images/Anzeige_2.jpg" alt="OLED-Anzeige 2" title="Dummy-Bildtext: Beschreibung für Anzeige 2 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> | <a href="./images/Anzeige_4.jpg"><img src="./images/Anzeige_4.jpg" alt="OLED-Anzeige 4" title="Dummy-Bildtext: Beschreibung für Anzeige 4 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> | <a href="./images/Anzeige_Arrow_Invertiert.jpg"><img src="./images/Anzeige_Arrow_Invertiert.jpg" alt="Invertierte Pfeilanzeige" title="Dummy-Bildtext: Beschreibung für die invertierte Pfeilanzeige ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> | <a href="./images/Anzeige_CC5.jpg"><img src="./images/Anzeige_CC5.jpg" alt="Kartenanzeige Kreuz 5" title="Dummy-Bildtext: Beschreibung für Kartenanzeige Kreuz 5 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> |
+| <a href="./images/Anzeige_CDJ.jpg"><img src="./images/Anzeige_CDJ.jpg" alt="Kartenanzeige Karo Bube" title="Dummy-Bildtext: Beschreibung für Kartenanzeige Karo Bube ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> | <a href="./images/Anzeige_CH6.jpg"><img src="./images/Anzeige_CH6.jpg" alt="Kartenanzeige Herz 6" title="Dummy-Bildtext: Beschreibung für Kartenanzeige Herz 6 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> | <a href="./images/Anzeige_CS1.jpg"><img src="./images/Anzeige_CS1.jpg" alt="Kartenanzeige Pik Ass" title="Dummy-Bildtext: Beschreibung für Kartenanzeige Pik Ass ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> | <a href="./images/Anzeige_CSQ.jpg"><img src="./images/Anzeige_CSQ.jpg" alt="Kartenanzeige Pik Dame" title="Dummy-Bildtext: Beschreibung für Kartenanzeige Pik Dame ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> |
+| <a href="./images/Anzeige_Text_V6..jpg"><img src="./images/Anzeige_Text_V6..jpg" alt="Textanzeige Version 6" title="Dummy-Bildtext: Beschreibung für Textanzeige Version 6 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> | <a href="./images/IMG_20260520_101845.jpg"><img src="./images/IMG_20260520_101845.jpg" alt="ESP32-C3-OLED-Board Ansicht 1" title="Dummy-Bildtext: Beschreibung für Board-Ansicht 1 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> | <a href="./images/IMG_20260520_185057.jpg"><img src="./images/IMG_20260520_185057.jpg" alt="ESP32-C3-OLED-Board Ansicht 2" title="Dummy-Bildtext: Beschreibung für Board-Ansicht 2 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> | <a href="./images/IMG_20260520_185059.jpg"><img src="./images/IMG_20260520_185059.jpg" alt="ESP32-C3-OLED-Board Ansicht 3" title="Dummy-Bildtext: Beschreibung für Board-Ansicht 3 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> |
+| <a href="./images/IMG_20260520_185107.jpg"><img src="./images/IMG_20260520_185107.jpg" alt="ESP32-C3-OLED-Board Ansicht 4" title="Dummy-Bildtext: Beschreibung für Board-Ansicht 4 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> | <a href="./images/IMG_20260520_185109.jpg"><img src="./images/IMG_20260520_185109.jpg" alt="ESP32-C3-OLED-Board Ansicht 5" title="Dummy-Bildtext: Beschreibung für Board-Ansicht 5 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> | <a href="./images/IMG_20260520_185119.jpg"><img src="./images/IMG_20260520_185119.jpg" alt="ESP32-C3-OLED-Board Ansicht 6" title="Dummy-Bildtext: Beschreibung für Board-Ansicht 6 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> | <a href="./images/IMG_20260520_185121.jpg"><img src="./images/IMG_20260520_185121.jpg" alt="ESP32-C3-OLED-Board Ansicht 7" title="Dummy-Bildtext: Beschreibung für Board-Ansicht 7 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> |
+| <a href="./images/IMG_20260520_185127.jpg"><img src="./images/IMG_20260520_185127.jpg" alt="ESP32-C3-OLED-Board Ansicht 8" title="Dummy-Bildtext: Beschreibung für Board-Ansicht 8 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> | <a href="./images/IMG_20260520_185129.jpg"><img src="./images/IMG_20260520_185129.jpg" alt="ESP32-C3-OLED-Board Ansicht 9" title="Dummy-Bildtext: Beschreibung für Board-Ansicht 9 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> | <a href="./images/IMG_20260520_185131.jpg"><img src="./images/IMG_20260520_185131.jpg" alt="ESP32-C3-OLED-Board Ansicht 10" title="Dummy-Bildtext: Beschreibung für Board-Ansicht 10 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> | <a href="./images/IMG_20260520_185133.jpg"><img src="./images/IMG_20260520_185133.jpg" alt="ESP32-C3-OLED-Board Ansicht 11" title="Dummy-Bildtext: Beschreibung für Board-Ansicht 11 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> |
+| <a href="./images/IMG-1a8f809a455688be73f90f562fdc3681-V.jpg"><img src="./images/IMG-1a8f809a455688be73f90f562fdc3681-V.jpg" alt="Projektfoto 1" title="Dummy-Bildtext: Beschreibung für Projektfoto 1 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> | <a href="./images/IMG-2c5c8db3e7a9183e8b3c9f819ce73c37-V.jpg"><img src="./images/IMG-2c5c8db3e7a9183e8b3c9f819ce73c37-V.jpg" alt="Projektfoto 2" title="Dummy-Bildtext: Beschreibung für Projektfoto 2 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> | <a href="./images/IMG-abf5516bc5cc32a5a88704ef05c3a8eb-V.jpg"><img src="./images/IMG-abf5516bc5cc32a5a88704ef05c3a8eb-V.jpg" alt="Projektfoto 3" title="Dummy-Bildtext: Beschreibung für Projektfoto 3 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> | <a href="./images/IMG-d6a3256a0b7595875f5d4c06f585cff3-V.jpg"><img src="./images/IMG-d6a3256a0b7595875f5d4c06f585cff3-V.jpg" alt="Projektfoto 4" title="Dummy-Bildtext: Beschreibung für Projektfoto 4 ergänzen." width="180"></a><br><sub>Bildtext folgt.</sub> |
 
 ## Was das Gerät anzeigen kann
 
