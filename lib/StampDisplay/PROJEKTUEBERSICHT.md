@@ -1,6 +1,6 @@
 ---
-Datum: 21.05.2026
-Version: 3
+Datum: 22.05.2026
+Version: 4
 Autor: Peter Heß, Germany (+Codex)
 ---
 # StampDisplay
@@ -13,6 +13,7 @@ Die Library bündelt Darstellungslogik, die von mehreren Unterprojekten genutzt 
 
 - große Pfeile für acht Kompassrichtungen.
 - ein oder zwei große Symbole auf ASCII-Basis.
+- ESP-Symbole in Form von Kreis, Kreuz, Wellen, Quadrat und Stern.
 - Spielkarten eines vollständigen Pokerdecks inklusive zwei Joker mit englischen Pokerbezeichnungen.
 - normale und invertierte Darstellung mit hellem Hintergrund.
 
@@ -26,6 +27,8 @@ Die Spielkartendarstellung wird von `BoardTest` und `BlePrompter` gemeinsam genu
 | `src/ArrowDisplay.cpp` | Implementierung der Pfeildarstellung. |
 | `include/StampDisplay/AsciiCharacterDisplay.h` | Öffentliche API für Symboldarstellung auf ASCII-Basis. |
 | `src/AsciiCharacterDisplay.cpp` | Implementierung der Symboldarstellung auf ASCII-Basis. |
+| `include/StampDisplay/EspSymbolDisplay.h` | Öffentliche API für ESP-Symboldarstellung. |
+| `src/EspSymbolDisplay.cpp` | Implementierung der ESP-Symboldarstellung mit U8g2-Primitiven. |
 | `include/StampDisplay/PlayingCardDisplay.h` | Öffentliche API für Spielkartendarstellung. |
 | `src/PlayingCardDisplay.cpp` | Implementierung der Spielkartendarstellung. |
 | `library.json` | PlatformIO-Metadaten der lokalen Library. |
@@ -44,6 +47,7 @@ Danach können die Header eindeutig über den Library-Präfix eingebunden werden
 ```cpp
 #include <StampDisplay/ArrowDisplay.h>
 #include <StampDisplay/AsciiCharacterDisplay.h>
+#include <StampDisplay/EspSymbolDisplay.h>
 #include <StampDisplay/PlayingCardDisplay.h>
 ```
 

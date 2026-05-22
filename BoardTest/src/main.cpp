@@ -7,6 +7,7 @@
 
 #include <StampDisplay/ArrowDisplay.h>
 #include <StampDisplay/AsciiCharacterDisplay.h>
+#include <StampDisplay/EspSymbolDisplay.h>
 #include <StampDisplay/PlayingCardDisplay.h>
 
 #include "config.h"
@@ -14,6 +15,7 @@
 U8G2_SSD1306_72X40_ER_F_HW_I2C display(U8G2_R0, U8X8_PIN_NONE);
 ArrowDisplay arrowDisplay;
 AsciiCharacterDisplay asciiCharacterDisplay;
+EspSymbolDisplay espSymbolDisplay;
 PlayingCardDisplay playingCardDisplay;
 
 struct ButtonState
@@ -29,7 +31,24 @@ enum class TestDisplayKind : uint8_t
     card,
     counter,
     asciiSingle,
-    asciiPair
+    asciiPair,
+    espSymbol
+};
+
+enum class TestDisplaySeries : uint8_t
+{
+    arrows,
+    cards,
+    counters,
+    asciiSingles,
+    asciiPairs,
+    espSymbols,
+    invertedArrows,
+    invertedCards,
+    invertedCounters,
+    invertedAsciiSingles,
+    invertedAsciiPairs,
+    invertedEspSymbols
 };
 
 ButtonState buttonState;
@@ -44,7 +63,9 @@ uint8_t currentCounterValue = 1;
 char currentAsciiFirstCharacter = 'A';
 char currentAsciiSecondCharacter = '\0';
 CompassDirection currentArrowDirection = CompassDirection::N;
+EspSymbol currentEspSymbol = EspSymbol::circle;
 TestDisplayKind currentDisplayKind = TestDisplayKind::arrow;
+TestDisplaySeries currentDisplaySeries = TestDisplaySeries::arrows;
 
 constexpr CompassDirection arrowDirections[ArrowDisplay::directionCount] = {
     CompassDirection::N,
@@ -57,17 +78,19 @@ constexpr CompassDirection arrowDirections[ArrowDisplay::directionCount] = {
     CompassDirection::NW
 };
 
+constexpr EspSymbol espSymbols[EspSymbolDisplay::symbolCount] = {
+    EspSymbol::circle,
+    EspSymbol::cross,
+    EspSymbol::waves,
+    EspSymbol::square,
+    EspSymbol::star
+};
+
 constexpr uint8_t randomCardDisplayCount = 16;
 constexpr uint8_t counterDisplayCount = 12;
 constexpr uint8_t randomSingleAsciiDisplayCount = 10;
 constexpr uint8_t randomPairAsciiDisplayCount = 10;
-constexpr uint8_t normalSequenceStepCount =
-    ArrowDisplay::directionCount
-    + randomCardDisplayCount
-    + counterDisplayCount
-    + randomSingleAsciiDisplayCount
-    + randomPairAsciiDisplayCount;
-constexpr uint8_t fullSequenceStepCount = normalSequenceStepCount * 2;
+constexpr uint8_t testDisplaySeriesCount = 12;
 
 const char *getDebugLevelName(DebugLevel debugLevel)
 {
@@ -268,52 +291,123 @@ void writeCurrentTestStepDescription()
             Serial.print(currentAsciiFirstCharacter);
             Serial.println(currentAsciiSecondCharacter);
             break;
+        case TestDisplayKind::espSymbol:
+            writeLineToOutputs(espSymbolDisplay.getSymbolDescription(currentEspSymbol));
+            break;
     }
+}
+
+const char *getCurrentTestDisplaySeriesDescription()
+{
+    switch (currentDisplaySeries)
+    {
+        case TestDisplaySeries::arrows:
+            return "Pfeile";
+        case TestDisplaySeries::cards:
+            return "Spielkarten";
+        case TestDisplaySeries::counters:
+            return "Zähler";
+        case TestDisplaySeries::asciiSingles:
+            return "ASCII Einzelzeichen";
+        case TestDisplaySeries::asciiPairs:
+            return "ASCII Zeichenpaare";
+        case TestDisplaySeries::espSymbols:
+            return "ESP-Symbole";
+        case TestDisplaySeries::invertedArrows:
+            return "Pfeile invertiert";
+        case TestDisplaySeries::invertedCards:
+            return "Spielkarten invertiert";
+        case TestDisplaySeries::invertedCounters:
+            return "Zähler invertiert";
+        case TestDisplaySeries::invertedAsciiSingles:
+            return "ASCII Einzelzeichen invertiert";
+        case TestDisplaySeries::invertedAsciiPairs:
+            return "ASCII Zeichenpaare invertiert";
+        case TestDisplaySeries::invertedEspSymbols:
+            return "ESP-Symbole invertiert";
+    }
+
+    return "Symbolreihe unbekannt";
+}
+
+uint8_t getCurrentTestDisplaySeriesStepCount()
+{
+    switch (currentDisplaySeries)
+    {
+        case TestDisplaySeries::arrows:
+        case TestDisplaySeries::invertedArrows:
+            return ArrowDisplay::directionCount;
+        case TestDisplaySeries::cards:
+        case TestDisplaySeries::invertedCards:
+            return randomCardDisplayCount;
+        case TestDisplaySeries::counters:
+        case TestDisplaySeries::invertedCounters:
+            return counterDisplayCount;
+        case TestDisplaySeries::asciiSingles:
+        case TestDisplaySeries::invertedAsciiSingles:
+            return randomSingleAsciiDisplayCount;
+        case TestDisplaySeries::asciiPairs:
+        case TestDisplaySeries::invertedAsciiPairs:
+            return randomPairAsciiDisplayCount;
+        case TestDisplaySeries::espSymbols:
+        case TestDisplaySeries::invertedEspSymbols:
+            return EspSymbolDisplay::symbolCount;
+    }
+
+    return 1;
+}
+
+void writeCurrentTestDisplaySeriesDescription()
+{
+    writeTextToOutputs("Symbolreihe: ");
+    writeLineToOutputs(getCurrentTestDisplaySeriesDescription());
 }
 
 void prepareTestStep(uint8_t testStepIndex)
 {
-    currentTestStepInverted = testStepIndex >= normalSequenceStepCount;
-    uint8_t normalStepIndex = testStepIndex % normalSequenceStepCount;
+    currentTestStepInverted =
+        currentDisplaySeries == TestDisplaySeries::invertedArrows
+        || currentDisplaySeries == TestDisplaySeries::invertedCards
+        || currentDisplaySeries == TestDisplaySeries::invertedCounters
+        || currentDisplaySeries == TestDisplaySeries::invertedAsciiSingles
+        || currentDisplaySeries == TestDisplaySeries::invertedAsciiPairs
+        || currentDisplaySeries == TestDisplaySeries::invertedEspSymbols;
 
-    if (normalStepIndex < ArrowDisplay::directionCount)
+    switch (currentDisplaySeries)
     {
-        currentDisplayKind = TestDisplayKind::arrow;
-        currentArrowDirection = arrowDirections[normalStepIndex];
-        return;
+        case TestDisplaySeries::arrows:
+        case TestDisplaySeries::invertedArrows:
+            currentDisplayKind = TestDisplayKind::arrow;
+            currentArrowDirection = arrowDirections[testStepIndex % ArrowDisplay::directionCount];
+            break;
+        case TestDisplaySeries::cards:
+        case TestDisplaySeries::invertedCards:
+            currentDisplayKind = TestDisplayKind::card;
+            currentCardIndex = static_cast<uint8_t>(random(0, PlayingCardDisplay::cardCount));
+            break;
+        case TestDisplaySeries::counters:
+        case TestDisplaySeries::invertedCounters:
+            currentDisplayKind = TestDisplayKind::counter;
+            currentCounterValue = (testStepIndex % counterDisplayCount) + 1;
+            break;
+        case TestDisplaySeries::asciiSingles:
+        case TestDisplaySeries::invertedAsciiSingles:
+            currentDisplayKind = TestDisplayKind::asciiSingle;
+            currentAsciiFirstCharacter = getRandomPrintableAsciiCharacter();
+            currentAsciiSecondCharacter = '\0';
+            break;
+        case TestDisplaySeries::asciiPairs:
+        case TestDisplaySeries::invertedAsciiPairs:
+            currentDisplayKind = TestDisplayKind::asciiPair;
+            currentAsciiFirstCharacter = getRandomPrintableAsciiCharacter();
+            currentAsciiSecondCharacter = getRandomPrintableAsciiCharacter();
+            break;
+        case TestDisplaySeries::espSymbols:
+        case TestDisplaySeries::invertedEspSymbols:
+            currentDisplayKind = TestDisplayKind::espSymbol;
+            currentEspSymbol = espSymbols[testStepIndex % EspSymbolDisplay::symbolCount];
+            break;
     }
-
-    normalStepIndex -= ArrowDisplay::directionCount;
-
-    if (normalStepIndex < randomCardDisplayCount)
-    {
-        currentDisplayKind = TestDisplayKind::card;
-        currentCardIndex = static_cast<uint8_t>(random(0, PlayingCardDisplay::cardCount));
-        return;
-    }
-
-    normalStepIndex -= randomCardDisplayCount;
-
-    if (normalStepIndex < counterDisplayCount)
-    {
-        currentDisplayKind = TestDisplayKind::counter;
-        currentCounterValue = normalStepIndex + 1;
-        return;
-    }
-
-    normalStepIndex -= counterDisplayCount;
-
-    if (normalStepIndex < randomSingleAsciiDisplayCount)
-    {
-        currentDisplayKind = TestDisplayKind::asciiSingle;
-        currentAsciiFirstCharacter = getRandomPrintableAsciiCharacter();
-        currentAsciiSecondCharacter = '\0';
-        return;
-    }
-
-    currentDisplayKind = TestDisplayKind::asciiPair;
-    currentAsciiFirstCharacter = getRandomPrintableAsciiCharacter();
-    currentAsciiSecondCharacter = getRandomPrintableAsciiCharacter();
 }
 
 void drawCurrentTestStep()
@@ -347,6 +441,9 @@ void drawCurrentTestStep()
                 currentAsciiSecondCharacter,
                 currentTestStepInverted);
             break;
+        case TestDisplayKind::espSymbol:
+            espSymbolDisplay.drawSymbol(display, currentEspSymbol, currentTestStepInverted);
+            break;
     }
 
     display.sendBuffer();
@@ -362,7 +459,16 @@ void showCurrentTestStep(unsigned long currentMillis)
 
 void advanceTestStep(unsigned long currentMillis)
 {
-    currentTestStepIndex = (currentTestStepIndex + 1) % fullSequenceStepCount;
+    currentTestStepIndex = (currentTestStepIndex + 1) % getCurrentTestDisplaySeriesStepCount();
+    showCurrentTestStep(currentMillis);
+}
+
+void selectNextTestDisplaySeries(unsigned long currentMillis)
+{
+    currentDisplaySeries = static_cast<TestDisplaySeries>(
+        (static_cast<uint8_t>(currentDisplaySeries) + 1) % testDisplaySeriesCount);
+    currentTestStepIndex = 0;
+    writeCurrentTestDisplaySeriesDescription();
     showCurrentTestStep(currentMillis);
 }
 
@@ -373,22 +479,17 @@ void startTestMode(unsigned long currentMillis)
     testModeRunning = true;
     idleScreenDrawn = false;
     currentTestStepIndex = 0;
+    currentDisplaySeries = TestDisplaySeries::arrows;
     writeDebugMessage(DebugLevel::info, "Testmodus gestartet");
+    writeCurrentTestDisplaySeriesDescription();
     showCurrentTestStep(currentMillis);
-}
-
-void stopTestMode()
-{
-    testModeRunning = false;
-    writeDebugMessage(DebugLevel::info, "Testmodus gestoppt");
-    drawIdleScreen();
 }
 
 void handleButtonPressed(unsigned long currentMillis)
 {
     if (testModeRunning)
     {
-        stopTestMode();
+        selectNextTestDisplaySeries(currentMillis);
         return;
     }
 

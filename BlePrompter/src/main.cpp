@@ -10,6 +10,7 @@
 
 #include <StampDisplay/ArrowDisplay.h>
 #include <StampDisplay/AsciiCharacterDisplay.h>
+#include <StampDisplay/EspSymbolDisplay.h>
 #include <StampDisplay/PlayingCardDisplay.h>
 
 #include "config.h"
@@ -26,6 +27,7 @@ struct ReceivedCommand
 U8G2_SSD1306_72X40_ER_F_HW_I2C display(U8G2_R0, U8X8_PIN_NONE);
 ArrowDisplay arrowDisplay;
 AsciiCharacterDisplay asciiCharacterDisplay;
+EspSymbolDisplay espSymbolDisplay;
 PlayingCardDisplay playingCardDisplay;
 
 QueueHandle_t receivedCommandQueue = nullptr;
@@ -365,6 +367,14 @@ void drawPlayingCard(uint8_t cardIndex)
     idleScreenDrawn = true;
 }
 
+void drawEspSymbol(EspSymbol espSymbol)
+{
+    display.clearBuffer();
+    espSymbolDisplay.drawSymbol(display, espSymbol, displayInverted);
+    display.sendBuffer();
+    idleScreenDrawn = true;
+}
+
 bool tryParseCompassDirection(const std::string &argument, CompassDirection &compassDirection)
 {
     const std::string directionText = getUppercaseAsciiString(trimString(argument));
@@ -583,6 +593,49 @@ bool tryParseCompactPlayingCardCommand(const std::string &commandName, uint8_t &
     return true;
 }
 
+bool tryParseEspSymbol(const std::string &text, EspSymbol &espSymbol)
+{
+    const std::string symbolText = getUppercaseAsciiString(trimString(text));
+
+    if (symbolText == "C" || symbolText == "CIRCLE" || symbolText == "KREIS")
+    {
+        espSymbol = EspSymbol::circle;
+        return true;
+    }
+    if (symbolText == "G" || symbolText == "CROSS" || symbolText == "KREUZ")
+    {
+        espSymbol = EspSymbol::cross;
+        return true;
+    }
+    if (symbolText == "W" || symbolText == "WAVE" || symbolText == "WAVES" || symbolText == "WELLEN")
+    {
+        espSymbol = EspSymbol::waves;
+        return true;
+    }
+    if (symbolText == "Q" || symbolText == "SQUARE" || symbolText == "QUADRAT")
+    {
+        espSymbol = EspSymbol::square;
+        return true;
+    }
+    if (symbolText == "S" || symbolText == "STAR" || symbolText == "STERN")
+    {
+        espSymbol = EspSymbol::star;
+        return true;
+    }
+
+    return false;
+}
+
+bool tryParseCompactEspSymbolCommand(const std::string &commandName, EspSymbol &espSymbol)
+{
+    if (commandName.length() != 2 || commandName[0] != 'E')
+    {
+        return false;
+    }
+
+    return tryParseEspSymbol(commandName.substr(1), espSymbol);
+}
+
 bool isEnabledText(const std::string &text)
 {
     const std::string uppercaseText = getUppercaseAsciiString(trimString(text));
@@ -597,7 +650,7 @@ bool isDisabledText(const std::string &text)
 
 void sendHelp()
 {
-    sendResponse("Commands: TEXT, S*, A*, CHX, CJ1, I1, I0, CL, H");
+    sendResponse("Commands: TEXT, S*, E*, A*, CHX, CJ1, I1, I0, CL, H");
 }
 
 void processCommand(const char *rawCommand)
@@ -654,6 +707,14 @@ void processCommand(const char *rawCommand)
             return;
         }
 
+        EspSymbol compactEspSymbol = EspSymbol::circle;
+        if (tryParseCompactEspSymbolCommand(commandName, compactEspSymbol))
+        {
+            drawEspSymbol(compactEspSymbol);
+            sendResponse("OK: ESP symbol shown");
+            return;
+        }
+
         CompassDirection compactCompassDirection = CompassDirection::N;
         if (tryParseCompactArrowCommand(commandName, compactCompassDirection))
         {
@@ -694,6 +755,20 @@ void processCommand(const char *rawCommand)
 
         drawAsciiCharacters(argument.c_str());
         sendResponse("OK: Symbol shown");
+        return;
+    }
+
+    if (commandName == "ESP")
+    {
+        EspSymbol espSymbol = EspSymbol::circle;
+        if (!tryParseEspSymbol(argument, espSymbol))
+        {
+            sendResponse("ERROR: ESP symbol unknown");
+            return;
+        }
+
+        drawEspSymbol(espSymbol);
+        sendResponse("OK: ESP symbol shown");
         return;
     }
 

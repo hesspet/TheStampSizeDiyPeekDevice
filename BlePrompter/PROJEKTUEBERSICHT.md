@@ -1,6 +1,6 @@
 ---
-Datum: 21.05.2026
-Version: 5
+Datum: 22.05.2026
+Version: 6
 Autor: Peter Heß, Germany (+Codex)
 ---
 
@@ -62,12 +62,13 @@ Unterstützt werden:
 
 - Textanzeige mit `TEXT`
 - große Symbolanzeige mit `SYMBOL`
+- ESP-Symbole mit `ESP` und Kurzbefehlen `EC`, `EG`, `EW`, `EQ`, `ES`
 - Pfeile mit `ARROW`
 - Spielkarten mit `CARD`
 - invertierte Darstellung mit `INVERT`
 - Löschen der Anzeige mit `CLEAR`
 - kurze Hilfe mit `HELP`
-- kurze Makro-Aliasse wie `SA`, `SOK`, `AN`, `ASW`, `CHX`, `CJ1`, `I1`, `I0`, `CL` und `H`
+- kurze Makro-Aliasse wie `SA`, `SOK`, `EC`, `EW`, `AN`, `ASW`, `CHX`, `CJ1`, `I1`, `I0`, `CL` und `H`
 - Kartenbefehle nutzen englische Pokerbezeichnungen: `Heart`, `Diamond`, `Clubs`, `Spade`, `Ace`, `Jack`, `Queen`, `King` und `X` für 10.
 
 ## Display-Bibliothek
@@ -76,6 +77,7 @@ Unterstützt werden:
 
 - Pfeile
 - Symbole
+- ESP-Symbole
 - Spielkarten
 
 ## Debug und Konfiguration

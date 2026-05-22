@@ -1,6 +1,6 @@
 ---
-Datum: 21.05.2026
-Version: 1
+Datum: 22.05.2026
+Version: 2
 Autor: Peter Heß, Germany (+Codex)
 ---
 
@@ -90,6 +90,11 @@ Die vollständige Syntax liegt in `BEFEHLE.md`. Für eine Web-Bluetooth-Seite si
 | `I0` | invertierte Darstellung ausschalten |
 | `SA` | Symbol `A` anzeigen |
 | `SOK` | Symbolpaar `OK` anzeigen |
+| `EC` | ESP-Kreis anzeigen |
+| `EG` | ESP-Kreuz anzeigen |
+| `EW` | ESP-Wellen anzeigen |
+| `EQ` | ESP-Quadrat anzeigen |
+| `ES` | ESP-Stern anzeigen |
 | `AN` | Arrow North anzeigen |
 | `ANE` | Arrow Northeast anzeigen |
 | `ASW` | Arrow Southwest anzeigen |
@@ -104,6 +109,7 @@ Auch Langbefehle funktionieren:
 ```text
 TEXT Door|open
 SYMBOL OK
+ESP Circle
 ARROW NE
 CARD Heart X
 INVERT ON

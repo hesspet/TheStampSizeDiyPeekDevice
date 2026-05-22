@@ -163,7 +163,7 @@ h1 {
 
 .mode-tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.5rem;
   border-bottom: 1px solid var(--line);
   padding-bottom: 0.75rem;
@@ -351,6 +351,87 @@ h1 {
   text-transform: uppercase;
 }
 
+.esp-symbol-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.esp-symbol-button {
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: center;
+  justify-items: start;
+  min-height: 74px;
+  font-weight: 700;
+}
+
+.esp-symbol-shape {
+  position: relative;
+  display: block;
+  width: 2.1rem;
+  height: 2.1rem;
+  color: var(--warm);
+}
+
+.esp-symbol-circle,
+.esp-symbol-square {
+  border: 0.22rem solid currentColor;
+}
+
+.esp-symbol-circle {
+  border-radius: 50%;
+}
+
+.esp-symbol-cross::before,
+.esp-symbol-cross::after {
+  position: absolute;
+  content: "";
+  background: currentColor;
+}
+
+.esp-symbol-cross::before {
+  top: 0;
+  left: 0.82rem;
+  width: 0.46rem;
+  height: 2.1rem;
+}
+
+.esp-symbol-cross::after {
+  top: 0.82rem;
+  left: 0;
+  width: 2.1rem;
+  height: 0.46rem;
+}
+
+.esp-symbol-waves {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.esp-symbol-waves span {
+  width: 0.42rem;
+  height: 2rem;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 15%, transparent 0 0.34rem, currentColor 0.36rem 0.53rem, transparent 0.55rem),
+    radial-gradient(circle at 50% 50%, transparent 0 0.34rem, currentColor 0.36rem 0.53rem, transparent 0.55rem),
+    radial-gradient(circle at 50% 85%, transparent 0 0.34rem, currentColor 0.36rem 0.53rem, transparent 0.55rem);
+}
+
+.esp-symbol-star {
+  font-size: 2.35rem;
+  line-height: 0.88;
+}
+
+.esp-symbol-star::before {
+  content: "\2606";
+}
+
 .status-panel {
   display: grid;
   gap: 0.6rem;
@@ -406,6 +487,16 @@ h1 {
 
   .rank-grid {
     grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .esp-symbol-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .esp-symbol-button {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
   }
 
   .mode-panel[data-panel="cards"] {

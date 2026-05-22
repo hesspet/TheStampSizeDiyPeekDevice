@@ -1,6 +1,6 @@
 ---
-Datum: 21.05.2026
-Version: 5
+Datum: 22.05.2026
+Version: 6
 Autor: Peter Heß, Germany (+Codex)
 ---
 
@@ -34,6 +34,11 @@ Die Kurzsyntax nutzt eine einheitliche englische Sprachbasis:
 | `I0` | invertierte Darstellung ausschalten |
 | `SA` | Symbol `A` anzeigen |
 | `SOK` | Symbolpaar `OK` anzeigen |
+| `EC` | ESP-Kreis anzeigen |
+| `EG` | ESP-Kreuz anzeigen |
+| `EW` | ESP-Wellen anzeigen |
+| `EQ` | ESP-Quadrat anzeigen |
+| `ES` | ESP-Stern anzeigen |
 | `AN` | Arrow North anzeigen |
 | `ASW` | Arrow Southwest anzeigen |
 | `CHX` | Card Heart 10 anzeigen |
@@ -90,6 +95,28 @@ SOK
 ```
 
 Es werden ein oder zwei druckbare ASCII-Zeichen groß und zentriert angezeigt. Symbol-Ausgaben werden immer in Großbuchstaben angezeigt.
+
+## ESP-Symbole
+
+```text
+ESP Circle
+ESP Cross
+ESP Waves
+ESP Square
+ESP Star
+```
+
+Kurzformen:
+
+```text
+EC
+EG
+EW
+EQ
+ES
+```
+
+Die ESP-Symbole entsprechen den klassischen Zener-Kartenformen: Kreis, Kreuz, Wellen, Quadrat und Stern. Sie werden auf dem OLED mit U8g2-Primitiven gezeichnet und unterstützen normale sowie invertierte Darstellung.
 
 ## Arrow
 
@@ -233,6 +260,8 @@ Für MacroDroid kann ein BLE-Plugin genutzt werden, das den Nordic UART Service 
 TEXT Door|open
 ARROW NE
 SYMBOL OK
+ESP Circle
+EW
 CLEAR
 ANE
 SOK

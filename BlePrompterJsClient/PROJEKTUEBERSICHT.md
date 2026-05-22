@@ -1,6 +1,6 @@
 ---
-Datum: 21.05.2026
-Version: 3
+Datum: 22.05.2026
+Version: 4
 Autor: Peter Heß, Germany (+Codex)
 ---
 
@@ -89,6 +89,18 @@ SYMBOL <Zeichen>
 ```
 
 Die Firmware stellt die Zeichen groß und zentriert auf dem OLED dar.
+
+### ESP
+
+Die ESP-Ansicht bietet fünf Buttons für die klassischen ESP-/Zener-Symbole. Die Oberfläche ist deutsch beschriftet, die gesendeten Kurzbefehle bleiben englisch-kompakt:
+
+| UI | Befehl |
+| --- | --- |
+| Kreis | `EC` |
+| Kreuz | `EG` |
+| Wellen | `EW` |
+| Quadrat | `EQ` |
+| Stern | `ES` |
 
 ## Lokaler HTTPS-Demo-Server
 

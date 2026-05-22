@@ -1,6 +1,6 @@
 ---
-Datum: 21.05.2026
-Version: 7
+Datum: 22.05.2026
+Version: 8
 Autor: Peter Heß, Germany (+Codex)
 ---
 # BoardTest
@@ -17,12 +17,14 @@ Die Firmware prüft die zentralen Board-Funktionen:
 - Button-Auswertung auf GPIO9 mit internem Pull-up.
 - Selbst gezeichnete große Pfeile für die Kompassrichtungen `N`, `NO`, `O`, `SO`, `S`, `SW`, `W` und `NW`.
 - Anzeige von ein oder zwei ASCII-Zeichen über eine eigene Hilfsklasse.
+- Anzeige der ESP-Symbole Kreis, Kreuz, Wellen, Quadrat und Stern über die gemeinsame Display-Library.
 - Anzeige eines vollständigen Pokerdecks mit 52 Karten plus 2 Joker.
 - Selbst gezeichnete große Spielkartensymbole für Heart, Diamond, Clubs und Spade.
 - Kartenanzeige in der Reihenfolge Suit zuerst, dann Wert, zum Beispiel `Heart X` für Heart 10.
-- GPIO9 startet und stoppt einen automatischen Testmodus.
-- Jede Testanzeige bleibt eine Sekunde sichtbar und wechselt dann automatisch zur nächsten Anzeige.
-- Der Testmodus zeigt die komplette Sequenz zuerst normal und danach invertiert mit hellem Hintergrund.
+- GPIO9 startet den Testmodus und schaltet danach jeweils zur nächsten Symbolreihe.
+- Die aktuelle Symbolreihe wiederholt ihre Anzeigen im Sekundentakt, bis GPIO9 erneut gedrückt wird.
+- Beim Umschalten der Symbolreihe wird eine Meldung über USB-Serial ausgegeben.
+- Die Testreihen enthalten normale und invertierte Darstellungen mit hellem Hintergrund.
 - Serieller Programmheader über USB-Serial mit Programmname, Builddatum, Buildzeit und Debuglevel.
 - USB-Serial wartet beim Start kurz auf eine Monitor-Verbindung, damit der Startheader nach einem Reset sichtbar wird.
 
@@ -42,6 +44,7 @@ Die Header werden über den Library-Präfix eingebunden:
 ```cpp
 #include <StampDisplay/ArrowDisplay.h>
 #include <StampDisplay/AsciiCharacterDisplay.h>
+#include <StampDisplay/EspSymbolDisplay.h>
 #include <StampDisplay/PlayingCardDisplay.h>
 ```
 
@@ -78,16 +81,17 @@ Die ASCII-Anzeige liegt in `../lib/StampDisplay/include/StampDisplay/AsciiCharac
 
 Auch `PlayingCardDisplay` unterstützt normale und invertierte Darstellung.
 
+Die ESP-Symbolanzeige liegt in `../lib/StampDisplay/include/StampDisplay/EspSymbolDisplay.h` und `../lib/StampDisplay/src/EspSymbolDisplay.cpp`. Sie zeichnet Kreis, Kreuz, Wellen, Quadrat und Stern mit U8g2-Primitiven und unterstützt normale sowie invertierte Darstellung.
+
 ## Bedienung
 
 - Nach dem Flashen zeigt das OLED kurz `BoardTest`, die Programmversion, `Build:` und das Builddatum.
 - Danach zeigt das OLED `Test bereit` und `IO9 Start`.
-- Ein Druck auf GPIO9 startet den automatischen Testmodus.
-- Während der Testmodus läuft, stoppt ein weiterer Druck auf GPIO9 die Sequenz.
-- Jede Anzeige bleibt `1000 ms` sichtbar.
-- Die normale Sequenz ist: alle Pfeile, 16 zufällige Spielkarten inklusive möglicher Joker, Zähler `1` bis `12`, 10 zufällige ASCII-Einzelzeichen, 10 zufällige ASCII-Zeichenpaare.
-- Danach wird dieselbe Sequenzart invertiert mit hellem Hintergrund wiederholt.
-- Nach der invertierten Sequenz beginnt der Ablauf wieder von vorne.
+- Ein Druck auf GPIO9 startet den Testmodus mit der ersten Symbolreihe.
+- Jeder weitere Druck auf GPIO9 schaltet zur nächsten Symbolreihe.
+- Jede Anzeige bleibt `1000 ms` sichtbar, danach folgt die nächste Anzeige derselben Reihe.
+- Die aktuelle Symbolreihe läuft so lange weiter, bis erneut GPIO9 gedrückt wird.
+- Die Reihen sind: Pfeile, Spielkarten, Zähler `1` bis `12`, ASCII-Einzelzeichen, ASCII-Zeichenpaare, ESP-Symbole sowie dieselben Reihen invertiert.
 
 ## Hardwarebelegung
 

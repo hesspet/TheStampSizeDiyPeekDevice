@@ -36,6 +36,7 @@
         <button class="mode-tab active" type="button" data-mode="arrows" aria-pressed="true">Pfeile</button>
         <button class="mode-tab" type="button" data-mode="cards" aria-pressed="false">Karten</button>
         <button class="mode-tab" type="button" data-mode="symbols" aria-pressed="false">Symbole</button>
+        <button class="mode-tab" type="button" data-mode="esp" aria-pressed="false">ESP</button>
       </nav>
 
       <section class="mode-panel active" id="arrowsPanel" data-panel="arrows" aria-label="Pfeile">
@@ -102,6 +103,35 @@
             <button class="primary-action" id="sendSymbolButton" type="submit" disabled>Senden</button>
           </div>
         </form>
+      </section>
+
+      <section class="mode-panel" id="espPanel" data-panel="esp" aria-label="ESP-Symbole">
+        <div class="esp-symbol-grid" aria-label="ESP-Symbole">
+          <button class="command-button esp-symbol-button" type="button" data-command="EC" disabled>
+            <span class="esp-symbol-shape esp-symbol-circle" aria-hidden="true"></span>
+            <span>Kreis</span>
+          </button>
+          <button class="command-button esp-symbol-button" type="button" data-command="EG" disabled>
+            <span class="esp-symbol-shape esp-symbol-cross" aria-hidden="true"></span>
+            <span>Kreuz</span>
+          </button>
+          <button class="command-button esp-symbol-button" type="button" data-command="EW" disabled>
+            <span class="esp-symbol-shape esp-symbol-waves" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+            <span>Wellen</span>
+          </button>
+          <button class="command-button esp-symbol-button" type="button" data-command="EQ" disabled>
+            <span class="esp-symbol-shape esp-symbol-square" aria-hidden="true"></span>
+            <span>Quadrat</span>
+          </button>
+          <button class="command-button esp-symbol-button" type="button" data-command="ES" disabled>
+            <span class="esp-symbol-shape esp-symbol-star" aria-hidden="true"></span>
+            <span>Stern</span>
+          </button>
+        </div>
       </section>
 
       <section class="status-panel" aria-label="Status">
