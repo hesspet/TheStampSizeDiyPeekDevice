@@ -25,6 +25,8 @@ Dieses Repository sammelt mehrere PlatformIO-Unterprojekte für das kleine ESP32
 | [BoardTest](BoardTest/PROJEKTUEBERSICHT.md) | Test-Firmware `1.2.0` für OLED, Buildanzeige, GPIO9-gesteuerten automatischen Testmodus, projektweite Display-Library, selbst gezeichnete Pfeile, ASCII-Zeichenanzeige, Spielkarten und invertierte Anzeige des ESP32-C3-OLED-Boards. |
 | [BlePrompter](BlePrompter/PROJEKTUEBERSICHT.md) | BLE-UART-Firmware `1.3.0` mit Nordic UART Service für Android-Apps, MacroDroid/BLE-Plugins und Terminal-Makros. Zeigt Text, Pfeile, Symbole und Spielkarten auf dem OLED an. |
 | [BlePrompterJsClient](BlePrompterJsClient/PROJEKTUEBERSICHT.md) | Statische responsive Web-Bluetooth-Anwendung für GitHub Pages, lokale Demo-Server-Nutzung und BLE-UART-Steuerung von `BlePrompter` mit Pfeilen, Karten und Symbolen. |
+| [EnduranceTest](EnduranceTest/PROJEKTUEBERSICHT.md) | Dauertest-Firmware `1.0.0` für BLE-Scan, wechselnde OLED-Anzeigen, WLAN-Scan, simulierte Nutzung und UDP-Broadcast der RAM-Protokolldaten nach jedem Testzyklus. |
+| [EnduranceTestClient](EnduranceTestClient/PROJEKTUEBERSICHT.md) | Python-Client zum dauerhaften Empfang der `EnduranceTest`-UDP-Broadcasts und JSONL-Protokollierung im Temp-Verzeichnis. |
 
 ## BlePrompter als BLE-Device
 

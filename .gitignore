@@ -68,6 +68,10 @@ vcpkg_installed/
 Testing/
 .cache/
 
+# Python
+__pycache__/
+*.py[cod]
+
 # Node.js
 node_modules/
 
