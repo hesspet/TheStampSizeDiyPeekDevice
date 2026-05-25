@@ -1,6 +1,6 @@
 ---
-Datum: 22.05.2026
-Version: 6
+Datum: 25.05.2026
+Version: 7
 Autor: Peter Heß, Germany (+Codex)
 ---
 
@@ -32,6 +32,8 @@ Die Kurzsyntax nutzt eine einheitliche englische Sprachbasis:
 | `CL` | Display löschen |
 | `I1` | invertierte Darstellung einschalten |
 | `I0` | invertierte Darstellung ausschalten |
+| `U1` | 180-Grad-Darstellung einschalten |
+| `U0` | Normaldarstellung einschalten |
 | `SA` | Symbol `A` anzeigen |
 | `SOK` | Symbolpaar `OK` anzeigen |
 | `EC` | ESP-Kreis anzeigen |
@@ -236,6 +238,17 @@ I0
 ```
 
 Die Einstellung gilt für die folgenden Anzeige-Befehle.
+
+## Upside-down
+
+```text
+U1
+U0
+```
+
+`U1` dreht die OLED-Ausgabe für die folgenden Anzeige-Befehle um 180 Grad. `U0` stellt die Normaldarstellung wieder her.
+
+Die Einstellung ist für Displays gedacht, die kopfüber montiert sind. `U1` und `U0` zeichnen den aktuellen Bildinhalt nicht neu; die geänderte Ausrichtung wird erst beim nächsten Anzeige-Befehl sichtbar.
 
 ## Help
 

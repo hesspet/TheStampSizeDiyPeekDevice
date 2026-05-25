@@ -34,6 +34,7 @@ QueueHandle_t receivedCommandQueue = nullptr;
 NimBLECharacteristic *transmitCharacteristic = nullptr;
 
 bool displayInverted = false;
+bool displayUpsideDown = false;
 bool bluetoothClientConnected = false;
 bool shouldRestartBluetoothAdvertising = false;
 bool idleScreenDrawn = false;
@@ -141,6 +142,11 @@ void sendResponse(const char *message)
         transmitCharacteristic->setValue(message);
         transmitCharacteristic->notify();
     }
+}
+
+void applyDisplayRotation()
+{
+    display.setDisplayRotation(displayUpsideDown ? U8G2_R2 : U8G2_R0);
 }
 
 void writeStartupHeader()
@@ -650,7 +656,7 @@ bool isDisabledText(const std::string &text)
 
 void sendHelp()
 {
-    sendResponse("Commands: TEXT, S*, E*, A*, CHX, CJ1, I1, I0, CL, H");
+    sendResponse("Commands: TEXT, S*, E*, A*, CHX, CJ1, I1, I0, U1, U0, CL, H");
 }
 
 void processCommand(const char *rawCommand)
@@ -697,6 +703,22 @@ void processCommand(const char *rawCommand)
         {
             displayInverted = false;
             sendResponse("OK: Invert off");
+            return;
+        }
+
+        if (commandName == "U1")
+        {
+            displayUpsideDown = true;
+            applyDisplayRotation();
+            sendResponse("OK: Upside down on");
+            return;
+        }
+
+        if (commandName == "U0")
+        {
+            displayUpsideDown = false;
+            applyDisplayRotation();
+            sendResponse("OK: Upside down off");
             return;
         }
 

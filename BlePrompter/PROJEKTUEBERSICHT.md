@@ -1,6 +1,6 @@
 ---
-Datum: 22.05.2026
-Version: 6
+Datum: 25.05.2026
+Version: 7
 Autor: Peter Heß, Germany (+Codex)
 ---
 
@@ -66,9 +66,10 @@ Unterstützt werden:
 - Pfeile mit `ARROW`
 - Spielkarten mit `CARD`
 - invertierte Darstellung mit `INVERT`
+- 180-Grad-Darstellung für kopfüber montierte Displays mit `U1` und `U0`
 - Löschen der Anzeige mit `CLEAR`
 - kurze Hilfe mit `HELP`
-- kurze Makro-Aliasse wie `SA`, `SOK`, `EC`, `EW`, `AN`, `ASW`, `CHX`, `CJ1`, `I1`, `I0`, `CL` und `H`
+- kurze Makro-Aliasse wie `SA`, `SOK`, `EC`, `EW`, `AN`, `ASW`, `CHX`, `CJ1`, `I1`, `I0`, `U1`, `U0`, `CL` und `H`
 - Kartenbefehle nutzen englische Pokerbezeichnungen: `Heart`, `Diamond`, `Clubs`, `Spade`, `Ace`, `Jack`, `Queen`, `King` und `X` für 10.
 
 ## Display-Bibliothek

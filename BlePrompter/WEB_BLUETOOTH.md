@@ -1,6 +1,6 @@
 ---
-Datum: 22.05.2026
-Version: 2
+Datum: 25.05.2026
+Version: 3
 Autor: Peter Heß, Germany (+Codex)
 ---
 
@@ -88,6 +88,8 @@ Die vollständige Syntax liegt in `BEFEHLE.md`. Für eine Web-Bluetooth-Seite si
 | `H` | Help senden |
 | `I1` | invertierte Darstellung einschalten |
 | `I0` | invertierte Darstellung ausschalten |
+| `U1` | 180-Grad-Darstellung einschalten |
+| `U0` | Normaldarstellung einschalten |
 | `SA` | Symbol `A` anzeigen |
 | `SOK` | Symbolpaar `OK` anzeigen |
 | `EC` | ESP-Kreis anzeigen |
@@ -113,6 +115,7 @@ ESP Circle
 ARROW NE
 CARD Heart X
 INVERT ON
+U1
 CLEAR
 ```
 
@@ -120,6 +123,7 @@ CLEAR
 
 - Ein sichtbarer `Connect`-Button muss die Geräteauswahl starten.
 - Nach erfolgreicher Verbindung sollten Befehlsbuttons erst aktiv werden.
+- Bei kopfüber montiertem Display kann die Webseite nach dem Verbindungsaufbau einmalig `U1` senden.
 - Befehlsbuttons können direkt `sendBlePrompterCommand("CHX")` oder ähnliche Kommandos aufrufen.
 - Für freie Texteingabe sollte die Webseite `TEXT ` voranstellen und Zeilen mit `|` trennen.
 - Bei Verbindungsabbruch sollte die Webseite den verbundenen Zustand zurücksetzen und erneut `connectBlePrompter()` anbieten.
