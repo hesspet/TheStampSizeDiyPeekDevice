@@ -1,6 +1,6 @@
 ---
-Datum: 25.05.2026
-Version: 3
+Datum: 26.05.2026
+Version: 4
 Autor: Peter Heß, Germany (+Codex)
 ---
 
@@ -116,14 +116,23 @@ ARROW NE
 CARD Heart X
 INVERT ON
 U1
+SLEEP DISPLAY
+SLEEP DEEP 60
+SLEEP RESET
 CLEAR
 ```
+
+Bei `SLEEP DISPLAY` bleibt die BLE-Verbindung aktiv. Der nächste gesendete Befehl weckt das Display und wird direkt ausgeführt.
+
+Bei `SLEEP DEEP <Sekunden>` und `SLEEP RESET` trennt die BLE-Verbindung, weil der ESP32 in Tiefschlaf geht. Die Webseite sollte den verbundenen Zustand danach zurücksetzen und erneut `connectBlePrompter()` anbieten, sobald das Gerät wieder sichtbar ist.
 
 ## UI-Hinweise für die spätere Webseite
 
 - Ein sichtbarer `Connect`-Button muss die Geräteauswahl starten.
 - Nach erfolgreicher Verbindung sollten Befehlsbuttons erst aktiv werden.
 - Bei kopfüber montiertem Display kann die Webseite nach dem Verbindungsaufbau einmalig `U1` senden.
+- Ein Energiesparbutton kann `SLEEP DISPLAY` senden, wenn BLE verbunden bleiben soll.
+- Für längere Pausen kann die Webseite `SLEEP DEEP <Sekunden>` anbieten und danach den Verbindungsstatus zurücksetzen.
 - Befehlsbuttons können direkt `sendBlePrompterCommand("CHX")` oder ähnliche Kommandos aufrufen.
 - Für freie Texteingabe sollte die Webseite `TEXT ` voranstellen und Zeilen mit `|` trennen.
 - Bei Verbindungsabbruch sollte die Webseite den verbundenen Zustand zurücksetzen und erneut `connectBlePrompter()` anbieten.

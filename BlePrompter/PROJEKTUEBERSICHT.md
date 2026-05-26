@@ -1,6 +1,6 @@
 ---
-Datum: 25.05.2026
-Version: 7
+Datum: 26.05.2026
+Version: 8
 Autor: Peter Heß, Germany (+Codex)
 ---
 
@@ -67,10 +67,19 @@ Unterstützt werden:
 - Spielkarten mit `CARD`
 - invertierte Darstellung mit `INVERT`
 - 180-Grad-Darstellung für kopfüber montierte Displays mit `U1` und `U0`
+- Sleep-Modi mit `SLEEP DISPLAY`, `SLEEP DEEP <Sekunden>` und `SLEEP RESET`
 - Löschen der Anzeige mit `CLEAR`
 - kurze Hilfe mit `HELP`
 - kurze Makro-Aliasse wie `SA`, `SOK`, `EC`, `EW`, `AN`, `ASW`, `CHX`, `CJ1`, `I1`, `I0`, `U1`, `U0`, `CL` und `H`
 - Kartenbefehle nutzen englische Pokerbezeichnungen: `Heart`, `Diamond`, `Clubs`, `Spade`, `Ace`, `Jack`, `Queen`, `King` und `X` für 10.
+
+## Sleep-Modi
+
+`SLEEP DISPLAY` schaltet das OLED und den I2C-Bus ab, lässt BLE aber aktiv. Der nächste BLE-Befehl weckt das Display ohne Reset und wird direkt ausgeführt.
+
+`SLEEP DEEP <Sekunden>` schaltet in den ESP32-Tiefschlaf mit Timer-Aufwachen. BLE trennt dabei, und die Firmware startet nach Ablauf der Zeit neu.
+
+`SLEEP RESET` schaltet in den ESP32-Tiefschlaf ohne Timer. Das Gerät wacht erst durch Reset oder EN wieder auf.
 
 ## Display-Bibliothek
 

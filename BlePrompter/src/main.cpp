@@ -2,7 +2,10 @@
 #include <NimBLEDevice.h>
 #include <U8g2lib.h>
 #include <Wire.h>
+#include <esp_sleep.h>
 
+#include <cerrno>
+#include <climits>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -35,6 +38,7 @@ NimBLECharacteristic *transmitCharacteristic = nullptr;
 
 bool displayInverted = false;
 bool displayUpsideDown = false;
+bool displaySleepActive = false;
 bool bluetoothClientConnected = false;
 bool shouldRestartBluetoothAdvertising = false;
 bool idleScreenDrawn = false;
@@ -314,6 +318,71 @@ void clearDisplay()
     display.clearBuffer();
     display.sendBuffer();
     idleScreenDrawn = true;
+}
+
+void drawSleepStatus(const char *firstLine, const char *secondLine)
+{
+    prepareTextDisplay(false);
+    display.setFont(u8g2_font_6x10_tf);
+    display.setCursor(0, 8);
+    display.print(firstLine);
+    display.setCursor(0, 18);
+    display.print(secondLine);
+    display.sendBuffer();
+}
+
+void enterDisplaySleep()
+{
+    sendResponse("OK: Display-Schlaf aktiv");
+    display.clearBuffer();
+    display.sendBuffer();
+    display.setPowerSave(1);
+    Wire.end();
+    displaySleepActive = true;
+    idleScreenDrawn = true;
+}
+
+void wakeFromDisplaySleep()
+{
+    if (!displaySleepActive)
+    {
+        return;
+    }
+
+    Wire.begin(displayDataPin, displayClockPin);
+    display.begin();
+    display.enableUTF8Print();
+    applyDisplayRotation();
+    display.setPowerSave(0);
+    displaySleepActive = false;
+    idleScreenDrawn = false;
+    writeDebugMessage(DebugLevel::info, "Display aus Schlaf geweckt");
+}
+
+void enterTimedDeepSleep(uint64_t sleepSeconds)
+{
+    char response[64] = {};
+    snprintf(
+        response,
+        sizeof(response),
+        "OK: Tiefschlaf für %llu Sekunden",
+        static_cast<unsigned long long>(sleepSeconds));
+    sendResponse(response);
+    drawSleepStatus("Tiefschlaf", "Timer aktiv");
+    delay(200);
+
+    esp_sleep_enable_timer_wakeup(sleepSeconds * 1000000ULL);
+    esp_deep_sleep_start();
+}
+
+void enterResetOnlyDeepSleep()
+{
+    sendResponse("OK: Tiefschlaf bis Reset");
+    drawSleepStatus("Tiefschlaf", "Reset weckt");
+    delay(200);
+
+    esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+    esp_deep_sleep_start();
 }
 
 void drawPromptText(const char *text)
@@ -654,9 +723,43 @@ bool isDisabledText(const std::string &text)
     return uppercaseText == "OFF" || uppercaseText == "0" || uppercaseText == "FALSE";
 }
 
+bool tryParsePositiveSeconds(const std::string &text, uint64_t &seconds)
+{
+    const std::string trimmedText = trimString(text);
+    if (trimmedText.empty())
+    {
+        return false;
+    }
+
+    for (size_t characterIndex = 0; characterIndex < trimmedText.length(); characterIndex++)
+    {
+        if (!isdigit(static_cast<unsigned char>(trimmedText[characterIndex])))
+        {
+            return false;
+        }
+    }
+
+    errno = 0;
+    char *endPointer = nullptr;
+    const unsigned long long parsedSeconds = strtoull(trimmedText.c_str(), &endPointer, 10);
+    if (errno == ERANGE || endPointer == trimmedText.c_str() || *endPointer != '\0' || parsedSeconds == 0)
+    {
+        return false;
+    }
+
+    const uint64_t maximumTimerSeconds = ULLONG_MAX / 1000000ULL;
+    if (parsedSeconds > maximumTimerSeconds)
+    {
+        return false;
+    }
+
+    seconds = static_cast<uint64_t>(parsedSeconds);
+    return true;
+}
+
 void sendHelp()
 {
-    sendResponse("Commands: TEXT, S*, E*, A*, CHX, CJ1, I1, I0, U1, U0, CL, H");
+    sendResponse("Befehle: TEXT, S*, E*, A*, CHX, CJ1, I1, I0, U1, U0, SLEEP, CL, H");
 }
 
 void processCommand(const char *rawCommand)
@@ -841,6 +944,44 @@ void processCommand(const char *rawCommand)
         return;
     }
 
+    if (commandName == "SLEEP")
+    {
+        const size_t sleepSeparatorIndex = argument.find(' ');
+        const std::string sleepMode = getUppercaseAsciiString(
+            sleepSeparatorIndex == std::string::npos ? argument : argument.substr(0, sleepSeparatorIndex));
+        const std::string sleepArgument = sleepSeparatorIndex == std::string::npos
+            ? ""
+            : trimString(argument.substr(sleepSeparatorIndex + 1));
+
+        if (sleepMode == "DISPLAY")
+        {
+            enterDisplaySleep();
+            return;
+        }
+
+        if (sleepMode == "DEEP")
+        {
+            uint64_t sleepSeconds = 0;
+            if (!tryParsePositiveSeconds(sleepArgument, sleepSeconds))
+            {
+                sendResponse("FEHLER: Sekunden fehlen oder sind ungültig");
+                return;
+            }
+
+            enterTimedDeepSleep(sleepSeconds);
+            return;
+        }
+
+        if (sleepMode == "RESET")
+        {
+            enterResetOnlyDeepSleep();
+            return;
+        }
+
+        sendResponse("FEHLER: SLEEP DISPLAY, SLEEP DEEP <Sekunden> oder SLEEP RESET nutzen");
+        return;
+    }
+
     if (commandName == "CLEAR" || commandName == "CLS")
     {
         clearDisplay();
@@ -863,7 +1004,7 @@ public:
     void onConnect(NimBLEServer *server) override
     {
         bluetoothClientConnected = true;
-        idleScreenDrawn = false;
+        idleScreenDrawn = displaySleepActive;
         writeDebugMessage(DebugLevel::info, "BLE connected");
     }
 
@@ -871,7 +1012,7 @@ public:
     {
         bluetoothClientConnected = false;
         shouldRestartBluetoothAdvertising = true;
-        idleScreenDrawn = false;
+        idleScreenDrawn = displaySleepActive;
         writeDebugMessage(DebugLevel::info, "BLE disconnected");
     }
 };
@@ -947,10 +1088,11 @@ void loop()
     ReceivedCommand receivedCommand = {};
     while (receivedCommandQueue != nullptr && xQueueReceive(receivedCommandQueue, &receivedCommand, 0) == pdTRUE)
     {
+        wakeFromDisplaySleep();
         processCommand(receivedCommand.text);
     }
 
-    if (!idleScreenDrawn && millis() >= startupFinishedMillis)
+    if (!displaySleepActive && !idleScreenDrawn && millis() >= startupFinishedMillis)
     {
         drawIdleScreen();
     }

@@ -1,6 +1,6 @@
 ---
-Datum: 25.05.2026
-Version: 7
+Datum: 26.05.2026
+Version: 8
 Autor: Peter Heß, Germany (+Codex)
 ---
 
@@ -250,6 +250,20 @@ U0
 
 Die Einstellung ist für Displays gedacht, die kopfüber montiert sind. `U1` und `U0` zeichnen den aktuellen Bildinhalt nicht neu; die geänderte Ausrichtung wird erst beim nächsten Anzeige-Befehl sichtbar.
 
+## Sleep
+
+```text
+SLEEP DISPLAY
+SLEEP DEEP 60
+SLEEP RESET
+```
+
+`SLEEP DISPLAY` schaltet das OLED und den I2C-Bus ab. BLE bleibt aktiv. Der nächste empfangene BLE-Befehl aktiviert das Display sofort wieder und wird direkt ausgeführt.
+
+`SLEEP DEEP <Sekunden>` versetzt das Gerät in Tiefschlaf und aktiviert einen Timer als Aufwachquelle. Danach trennt BLE. Nach Ablauf der Sekunden startet die Firmware regulär neu.
+
+`SLEEP RESET` versetzt das Gerät in Tiefschlaf ohne Timer. Danach trennt BLE. Das Gerät wacht erst durch Reset oder EN wieder auf.
+
 ## Help
 
 ```text
@@ -275,6 +289,7 @@ ARROW NE
 SYMBOL OK
 ESP Circle
 EW
+SLEEP DISPLAY
 CLEAR
 ANE
 SOK
