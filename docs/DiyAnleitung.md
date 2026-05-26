@@ -12,11 +12,11 @@ Die Idee ist einfach:
 
 1. Du spielst die Firmware auf das ESP32-C3-OLED-Board.
 2. Das Board startet als Bluetooth-Gerät mit dem Namen `BlePrompter`.
-3. Du öffnest den Web-Client oder eine BLE-App.
+3. Du öffnest eine BLE-App.
 4. Du sendest einen Befehl.
 5. Das Display zeigt die gewünschte Information.
 
-Für Vorführungen ist wichtig: Das Gerät arbeitet nicht wie ein normales Bluetooth-Lautsprecher-Pairing. Es verwendet Bluetooth Low Energy und den Nordic UART Service. Darum brauchst du eine App oder Webseite, die BLE-UART sprechen kann.
+Für Vorführungen ist wichtig: Das Gerät arbeitet nicht wie ein normales Bluetooth-Lautsprecher-Pairing. Es verwendet Bluetooth Low Energy und den Nordic UART Service. Darum brauchst du eine App, die BLE-UART sprechen kann.
 
 ## Materialliste
 
@@ -26,9 +26,8 @@ Für den ersten funktionierenden Aufbau brauchst du:
 - USB-C-Kabel, das Daten übertragen kann. Manche Ladekabel funktionieren nicht.
 - Windows-PC mit USB-Anschluss.
 - PlatformIO zum Kompilieren und Aufspielen der Firmware.
-- Node.js, wenn du den lokalen HTTPS-Demo-Server für den Web-Client nutzen möchtest.
-- Android-Smartphone oder Chrome-Browser mit Web-Bluetooth-Unterstützung.
-- Optional: Android-App wie nRF Connect, Serial Bluetooth Terminal oder MacroDroid mit BLE-Plugin.
+- Android-Smartphone.
+- Android-App wie nRF Connect, Serial Bluetooth Terminal oder MacroDroid mit BLE-Plugin.
 
 Nützlich, aber nicht zwingend:
 
@@ -43,7 +42,6 @@ Die wichtigsten Ordner im Repository sind:
 | Ordner | Zweck |
 | --- | --- |
 | `BlePrompter` | Firmware für das ESP32-C3-OLED-Board. Diese Firmware wird kompiliert und auf das Board geladen. |
-| `BlePrompterJsClient` | Browser-Client zur Steuerung der Firmware per Web Bluetooth. |
 | `BoardTest` | Test-Firmware für Display, Pfeile, ASCII-Zeichen und Spielkarten. |
 | `docs` | Hardwaredatenblätter und diese DIY-Anleitung. |
 | `lib/StampDisplay` | Gemeinsame Display-Bibliothek für Pfeile, Symbole und Spielkarten. |
@@ -56,8 +54,7 @@ Installiere zuerst die Werkzeuge:
 
 1. Installiere Python.
 2. Installiere PlatformIO.
-3. Installiere optional Node.js für den Web-Client-Demo-Server.
-4. Öffne danach eine neue PowerShell, damit Windows die neuen Programme findet.
+3. Öffne danach eine neue PowerShell, damit Windows die neuen Programme findet.
 
 PlatformIO kann mit folgendem Befehl installiert oder aktualisiert werden:
 
@@ -191,57 +188,6 @@ CL
 
 Das Display ist sehr klein. Für gut lesbaren Text sind kurze Wörter besser als lange Sätze.
 
-## Nutzung des Clients
-
-Der Ordner `BlePrompterJsClient` enthält eine statische Webanwendung. Sie braucht keinen Build-Schritt. Für echte Bluetooth-Verbindungen muss die Seite aber in einem sicheren Kontext laufen. Das bedeutet: `https://...` oder `localhost`.
-
-### Lokaler Start auf dem PC
-
-Starte den HTTPS-Demo-Server mit:
-
-```powershell
-cd C:\dev\TheStampSizeDiyPeekDevice
-BlePrompterJsClient\start-demo-server.bat
-```
-
-Standardmäßig läuft der Server auf Port `8443`. Die Seite ist dann lokal erreichbar:
-
-```text
-https://localhost:8443/
-```
-
-Wenn der Port belegt ist, kannst du einen anderen Port angeben:
-
-```powershell
-BlePrompterJsClient\start-demo-server.bat 9443
-```
-
-### Nutzung auf dem Smartphone
-
-Für ein Smartphone im gleichen WLAN zeigt der Server zusätzlich LAN-Adressen an, zum Beispiel:
-
-```text
-https://192.168.1.50:8443/
-```
-
-Damit Chrome auf dem Smartphone Web Bluetooth zulässt, muss das lokale Zertifikat als vertrauenswürdig installiert sein:
-
-```text
-BlePrompterJsClient\certificates\ble-prompter-demo-root-ca.cer
-```
-
-Ohne dieses Vertrauen behandelt der Browser die Seite als unsicher. Dann kann Web Bluetooth blockiert werden.
-
-### Bedienung im Client
-
-Im Client gibt es drei Hauptbereiche:
-
-- Pfeile: sendet Richtungen wie `AN`, `ANE`, `ASW`.
-- Karten: sendet Spielkarten wie `CHX` für Herz 10 oder `CSK` für Pik König.
-- Symbole: sendet ein oder zwei große Zeichen, zum Beispiel `OK`.
-
-Die Oberfläche ist deutsch. Die gesendeten Befehle bleiben absichtlich englisch, weil sie kurz, eindeutig und makrotauglich sind.
-
 ## Codex als Hilfsmittel nutzen
 
 Codex kann beim Bau helfen, wenn du konkrete Aufgaben formulierst. Gute Aufgaben sind klein, prüfbar und nennen den Ordner, um den es geht.
@@ -258,10 +204,6 @@ Prüfe im Projekt BlePrompter, ob die Firmware kompiliert.
 
 ```text
 Erkläre mir die Datei BlePrompter/BEFEHLE.md so, dass ich die Befehle in MacroDroid nachbauen kann.
-```
-
-```text
-Füge dem Web-Client einen Button hinzu, der den Befehl CL sendet.
 ```
 
 ```text
@@ -297,9 +239,7 @@ Erstelle eine Tabelle mit allen Karten-Kurzbefehlen.
 | `pio` wird nicht gefunden | PlatformIO-Pfad ist nicht in der Windows-Umgebung | Direkten Pfad `& "$env:APPDATA\Python\Python313\Scripts\pio.exe"` verwenden. |
 | Upload bricht mit Zugriff verweigert ab | Serieller Monitor oder anderes Programm blockiert den COM-Port | Monitor schließen und Upload erneut starten. |
 | Board erscheint nicht als COM-Port | USB-Kabel kann nur laden oder Treiber fehlt | Datenfähiges USB-Kabel verwenden und Board neu einstecken. |
-| Web-Client findet kein BLE-Gerät | Browser sieht Advertisement nicht passend | Im Client `Alle BLE-Geräte anzeigen` verwenden. |
-| Web Bluetooth ist nicht verfügbar | Seite läuft nicht in sicherem Kontext | `https://...` oder `localhost` nutzen. |
-| Smartphone blockiert lokale HTTPS-Seite | Lokales Root-Zertifikat ist nicht vertraut | `ble-prompter-demo-root-ca.cer` auf dem Smartphone installieren. |
+| BLE-App findet kein Gerät | Gerät ist ausgeschaltet, schläft oder die App filtert zu stark | Gerät neu starten und in der App nach `BlePrompter` suchen. |
 | Text ist schlecht lesbar | Display ist sehr klein | Kurze Wörter, Symbole, Pfeile oder Kartenbefehle verwenden. |
 
 ## Vorführ-Checkliste
@@ -308,7 +248,7 @@ Vor einer Probe oder Vorführung:
 
 1. Board vollständig laden oder zuverlässige Stromversorgung anschließen.
 2. Firmware starten und Startanzeige prüfen.
-3. Client oder BLE-App öffnen.
+3. BLE-App öffnen.
 4. Verbindung mit `BlePrompter` testen.
 5. Befehle `SYMBOL OK`, `CHX` und `CL` senden.
 6. Display bei normalem Licht und Vorführlicht prüfen.
@@ -321,7 +261,6 @@ Wenn der Grundaufbau funktioniert, kannst du das Projekt an deine Routine anpass
 
 - Eigene Symbolkürzel definieren.
 - MacroDroid-Aktionen für bestimmte Situationen bauen.
-- Den Web-Client mit persönlichen Favoriten erweitern.
 - Ein kleines Gehäuse oder Requisit für das Board entwerfen.
 - Eine zweite Firmware mit reduziertem Funktionsumfang für eine bestimmte Routine erstellen.
 

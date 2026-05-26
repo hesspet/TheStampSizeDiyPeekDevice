@@ -1,14 +1,14 @@
 # The Stamp Size Diy Peek Device
 
-Ein winziges Display, ein kleines ESP32-C3-Board und eine einfache Idee: Informationen unauffällig sichtbar machen, wenn man sie braucht. Dieses Projekt richtet sich besonders an Zauberer, Mentalisten und Bastler, die ein kleines technisches Hilfsmittel selbst bauen möchten, ohne schon vorher tief in Firmware, Bluetooth und Webentwicklung zu stecken.
+Ein winziges Display, ein kleines ESP32-C3-Board und eine einfache Idee: Informationen unauffällig sichtbar machen, wenn man sie braucht. Dieses Projekt richtet sich besonders an Zauberer, Mentalisten und Bastler, die ein kleines technisches Hilfsmittel selbst bauen möchten, ohne schon vorher tief in Firmware und Bluetooth zu stecken.
 
-Das Gerät zeigt kurze Hinweise auf einem sehr kleinen OLED-Display an. Das können Pfeile, Spielkarten, kurze Wörter oder einfache Symbole sein. Gesteuert wird es drahtlos über Bluetooth Low Energy. Dadurch kann das Display in einem Requisit, am Körper oder in einer Testsituation liegen, während die Steuerung von einem Smartphone, Browser-Client oder einer geeigneten BLE-App kommt.
+Das Gerät zeigt kurze Hinweise auf einem sehr kleinen OLED-Display an. Das können Pfeile, Spielkarten, kurze Wörter oder einfache Symbole sein. Gesteuert wird es drahtlos über Bluetooth Low Energy. Dadurch kann das Display in einem Requisit, am Körper oder in einer Testsituation liegen, während die Steuerung von einem Smartphone oder einer geeigneten BLE-App kommt.
 
 ## Worum es geht
 
 `The Stamp Size Diy Peek Device` ist kein fertiges Kaufprodukt, sondern ein DIY-Projekt. Der Reiz liegt darin, ein kleines Gerät selbst zu bauen, zu verstehen und an die eigene Routine anzupassen.
 
-Die Firmware `BlePrompter` macht aus dem ESP32-C3-OLED-Board ein kleines Bluetooth-Anzeigegerät. Der passende Web-Client bietet eine einfache Oberfläche für Pfeile, Karten und Symbole. Wer lieber mit Android-Apps oder Automatisierung arbeitet, kann dieselben Befehle auch über BLE-Tools oder MacroDroid senden.
+Die Firmware `BlePrompter` macht aus dem ESP32-C3-OLED-Board ein kleines Bluetooth-Anzeigegerät. Die Steuerung erfolgt über BLE-UART-fähige Apps, BLE-Tools oder MacroDroid mit passendem BLE-Plugin.
 
 ## Bilder
 
@@ -42,7 +42,7 @@ Wenn du das Projekt zum ersten Mal umsetzen möchtest, beginne mit der DIY-Anlei
 
 [docs/DiyAnleitung.md](docs/DiyAnleitung.md)
 
-Dort steht Schritt für Schritt, welches Material benötigt wird, wie die Firmware kompiliert wird, wie sie auf das Board kommt und wie der Client genutzt wird. Die Anleitung ist bewusst für Laien geschrieben.
+Dort steht Schritt für Schritt, welches Material benötigt wird, wie die Firmware kompiliert wird, wie sie auf das Board kommt und wie das Gerät mit einer BLE-App getestet wird. Die Anleitung ist bewusst für Laien geschrieben.
 
 ## Kostenübersicht / Quellen
 
@@ -85,7 +85,7 @@ Typisch ist dieser Ablauf:
 
 1. Firmware auf das ESP32-C3-OLED-Board laden.
 2. Board einschalten.
-3. Mit dem Web-Client oder einer BLE-App verbinden.
+3. Mit einer BLE-App verbinden.
 4. Einen vorbereiteten Befehl senden.
 5. Das Display zeigt den gewünschten Hinweis.
 
@@ -107,17 +107,15 @@ Für dieses Projekt bedeutet das: Sobald eine App eine Karte, ein Wort, eine Zah
 
 ### Android
 
-Auf Android gibt es zwei naheliegende Wege: den vorhandenen `BlePrompterJsClient` im Browser oder eine Automatisierung über MacroDroid.
-
-Der `BlePrompterJsClient` ist bereits eine funktionsfähige Client-Anwendung. Er läuft als Webseite, nutzt Web Bluetooth und sendet die passenden BLE-UART-Befehle direkt an das Gerät. Eine typische Anwendung wäre ein Helfer im Hintergrund: Der Helfer sieht oder erfährt während der Show eine Information, wählt im Client die passende Karte, Richtung oder ein Symbol aus, und der Zauberer bekommt den Hinweis diskret auf dem kleinen Display angezeigt. Auf Android ist dafür Chrome interessant. Wichtig ist nur, dass die Seite in einem sicheren Kontext geöffnet wird, also über HTTPS oder `localhost`.
+Auf Android gibt es zwei naheliegende Wege: eine BLE-UART-App für manuelle Befehle oder eine Automatisierung über MacroDroid.
 
 Für Proben und erste Routinen ist dieser Ablauf am einfachsten:
 
 1. `BlePrompter` auf dem ESP32-C3-OLED-Board starten.
-2. Den `BlePrompterJsClient` auf dem Smartphone öffnen.
-3. Im Browser auf `Verbinden` tippen.
-4. Das Gerät `BlePrompter` auswählen.
-5. Pfeile, Karten oder Symbole über die Oberfläche senden.
+2. Eine BLE-UART-App wie nRF Connect oder Serial Bluetooth Terminal öffnen.
+3. Das Gerät `BlePrompter` auswählen.
+4. Den Nordic UART Service öffnen.
+5. Befehle wie `CHX`, `ARROW NE`, `SYMBOL OK` oder `CL` an die RX-Characteristic senden.
 
 MacroDroid ist der zweite realistische Android-Weg. MacroDroid kann [Webhooks](https://www.macrodroidforum.com/wiki/index.php/Trigger%3A_Webhook_%28URL%29) und [HTTP-Anfragen](https://www.macrodroidforum.com/wiki/index.php/Action%3A_HTTP_Request) verarbeiten. Mit einem passenden BLE-Plugin oder einer kleinen Android-Zwischen-App kann daraus ein BLE-UART-Schreibvorgang an `BlePrompter` werden.
 
@@ -133,33 +131,15 @@ Das ist besonders interessant für Routinen, bei denen eine bestehende App berei
 
 ### Windows
 
-Unter Windows ist der `BlePrompterJsClient` ebenfalls der wichtigste Einstieg. Er kann lokal aus dem Repository gestartet werden und läuft dann als kleine Webanwendung im Browser. Für Windows ist das besonders praktisch, weil keine native Desktop-App gebaut werden muss. Auch hier passt das Helfer-Szenario gut: Eine Person abseits der Bühne bedient den Client am Laptop und versorgt den Zauberer während der Vorführung mit kurzen, versteckten Informationen.
-
-Der Client liegt hier:
-
-[BlePrompterJsClient](BlePrompterJsClient)
-
-Der lokale Demo-Server wird so gestartet:
-
-```powershell
-BlePrompterJsClient\start-demo-server.bat
-```
-
-Danach kann die Oberfläche im Browser geöffnet werden:
-
-```text
-https://localhost:8443/
-```
-
-Auf Windows ist dieser Weg vor allem für Entwicklung, Tests und Proben nützlich. Man kann die Firmware auf das Board laden, den Client im Browser öffnen und sofort prüfen, ob die BLE-Verbindung und die Anzeige funktionieren.
+Unter Windows ist das Projekt vor allem für Entwicklung, Build, Upload und serielle Diagnose nützlich. Für die eigentliche BLE-Steuerung bleibt ein Smartphone mit BLE-App derzeit der einfachste Weg.
 
 Für bestehende Zauber-Apps oder externe Tools gibt es unter Windows außerdem einen gut testbaren Brücken-Ansatz:
 
 1. Eine App, ein Skript oder ein Webhook erzeugt einen kurzen `BlePrompter`-Befehl.
 2. Ein lokaler Prozess auf Windows nimmt diesen Befehl entgegen.
-3. Der Prozess sendet ihn per Web Bluetooth, BLE-Bibliothek oder später über eine kleine lokale Client-Erweiterung an `BlePrompter`.
+3. Der Prozess sendet ihn per BLE-Bibliothek oder über eine kleine lokale Hilfsanwendung an `BlePrompter`.
 
-Das ist technisch aufwendiger als die direkte Bedienung im Browser, aber für komplexere Routinen interessant. Besonders praktisch wäre später ein kleiner lokaler HTTP-Endpunkt, der Befehle wie `CHX` annimmt und an das verbundene Gerät weiterleitet.
+Das ist technisch aufwendiger als die direkte Bedienung per Smartphone-App, aber für komplexere Routinen interessant. Besonders praktisch wäre später ein kleiner lokaler HTTP-Endpunkt, der Befehle wie `CHX` annimmt und an das verbundene Gerät weiterleitet.
 
 ### iOS
 
@@ -191,7 +171,7 @@ Der aktuelle Schwerpunkt liegt auf:
 
 - stabiler BLE-Steuerung
 - gut lesbarer OLED-Ausgabe
-- einfacher Bedienung über Web-Bluetooth
+- einfacher Bedienung über BLE-Apps und Makros
 - verständlicher Dokumentation für Menschen, die nicht täglich Software bauen
 
 Das Projekt ist damit eine Grundlage zum Weiterbauen. Es soll nicht nur funktionieren, sondern auch nachvollziehbar bleiben.

@@ -394,6 +394,17 @@ void enterDisplaySleep()
     idleScreenDrawn = true;
 }
 
+void deactivateDisplayBeforeDeepSleep()
+{
+    display.clearBuffer();
+    display.sendBuffer();
+
+    // SSD1306: interne Charge-Pump deaktivieren und danach das Panel abschalten.
+    display.sendF("cac", 0x8D, 0x10, 0xAE);
+
+    Wire.end();
+}
+
 void wakeFromDisplaySleep()
 {
     if (!displaySleepActive)
@@ -415,6 +426,7 @@ void enterTimedDeepSleep(uint64_t sleepSeconds)
 {
     drawSleepStatus("Tiefschlaf", "Timer aktiv");
     delay(200);
+    deactivateDisplayBeforeDeepSleep();
 
     esp_sleep_enable_timer_wakeup(sleepSeconds * 1000000ULL);
     esp_deep_sleep_start();
@@ -424,6 +436,7 @@ void enterResetOnlyDeepSleep()
 {
     drawSleepStatus("Tiefschlaf", "Reset weckt");
     delay(200);
+    deactivateDisplayBeforeDeepSleep();
 
     esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
     esp_deep_sleep_start();

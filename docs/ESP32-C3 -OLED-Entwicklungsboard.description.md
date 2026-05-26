@@ -25,7 +25,7 @@ Diese Datei beschreibt die Integration des kleinen ESP32-C3-OLED-Entwicklungsboa
 
 Das Board ist für kleine Statusanzeigen gut geeignet. Die nutzbare Bildschirmfläche ist sehr klein, deshalb funktionieren kurze Texte, Statussymbole und zweizeilige Anzeigen deutlich besser als längere Meldungen.
 
-Im Repository nutzt `BlePrompter` dieses Board als BLE-gesteuertes OLED-Anzeigegerät. Für eine spätere JavaScript-Seite sind die Web-Bluetooth-Details in `../BlePrompter/WEB_BLUETOOTH.md` dokumentiert. Wichtig sind die Nordic-UART-UUIDs und kurze Textbefehle wie `CHX`, `AN`, `SOK`, `I1`, `I0` und `CL`.
+Im Repository nutzt `BlePrompter` dieses Board als BLE-gesteuertes OLED-Anzeigegerät. Wichtig sind die Nordic-UART-UUIDs und kurze Textbefehle wie `CHX`, `AN`, `SOK`, `I1`, `I0` und `CL`.
 
 ## PlatformIO-Grundkonfiguration
 

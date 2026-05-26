@@ -72,12 +72,6 @@ Testing/
 __pycache__/
 *.py[cod]
 
-# Node.js
-node_modules/
-
-# Lokale HTTPS-Demo-Zertifikate
-BlePrompterJsClient/certificates/
-
 # PlatformIO
 .pio/
 .vscode/.browse.c_cpp.db*

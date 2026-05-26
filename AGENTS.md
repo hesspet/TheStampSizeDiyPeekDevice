@@ -16,7 +16,6 @@
 - Generischer Projektkontext liegt in `./PROJEKTUEBERSICHT.md`.
 - Jedes Unterprojekt muss eine eigene `PROJEKTUEBERSICHT.md` besitzen.
 - Technische Hardwarebeschreibung: `./docs/ESP32-C3 -OLED-Entwicklungsboard.description.md`
-- BLE/Web-Bluetooth-Kontext für das Steuerungsprojekt liegt in `./BlePrompter/WEB_BLUETOOTH.md`.
 
 Die Hardwarebeschreibung enthält:
 
@@ -47,7 +46,7 @@ Zweck:
 
 - BLE-UART-Firmware für das ESP32-C3-OLED-Board.
 - Externe Steuerung ohne native Smartphone-App.
-- Geeignet für Android-Apps, MacroDroid mit BLE-Plugin und JavaScript/Web Bluetooth.
+- Geeignet für Android-Apps, MacroDroid mit BLE-Plugin und BLE-Terminal-Apps.
 - OLED-Anzeige für Text, Symbole, Pfeile und Spielkarten.
 - Kein automatischer Testmodus.
 - Startbild mit `BlePrompter`, Versionsnummer und Builddatum.
@@ -59,7 +58,6 @@ Wichtige Dateien:
 - `BlePrompter/src/main.cpp`
 - `BlePrompter/PROJEKTUEBERSICHT.md`
 - `BlePrompter/BEFEHLE.md`
-- `BlePrompter/WEB_BLUETOOTH.md`
 
 BLE-Konfiguration:
 
@@ -69,14 +67,6 @@ BLE-Konfiguration:
 - RX-Characteristic zum Schreiben: `6E400002-B5A3-F393-E0A9-E50E24DCCA9E`
 - TX-Characteristic für Antworten: `6E400003-B5A3-F393-E0A9-E50E24DCCA9E`
 - Pairing: einfaches BLE-Bonding ohne Passkey.
-
-Web-Bluetooth-Hinweise:
-
-- JavaScript soll `navigator.bluetooth.requestDevice(...)` verwenden.
-- Der Nordic-UART-Service muss in `optionalServices` stehen.
-- Befehle werden als UTF-8-Text per `TextEncoder` in die RX-Characteristic geschrieben.
-- Web Bluetooth braucht einen sicheren Kontext, also HTTPS oder `localhost`.
-- Die Geräteauswahl muss über eine Benutzeraktion gestartet werden.
 
 Befehlssyntax:
 
