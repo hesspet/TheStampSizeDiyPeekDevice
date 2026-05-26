@@ -1,6 +1,6 @@
 ---
 Datum: 26.05.2026
-Version: 4
+Version: 5
 Autor: Peter Heß, Germany (+Codex)
 ---
 
@@ -67,6 +67,8 @@ async function sendBlePrompterCommand(commandText) {
 ## Optionale Antworten lesen
 
 Die Firmware schreibt kurze Statusantworten auf die TX-Characteristic. Eine Webseite kann Notifications abonnieren.
+
+Nach der Verarbeitung eines Befehls lautet das Antwortformat `<Befehl>:OK` oder `<Befehl>:ERROR`. Der Befehlsteil ist der außen getrimmte Originaltext. Beispiele sind `SOK:OK`, `TEXT Hallo:OK` und `CARD Foo:ERROR`. `HELP`, `H` und `?` senden weiterhin nur die Befehlsübersicht.
 
 ```js
 async function startBlePrompterNotifications(onMessage) {

@@ -11,7 +11,7 @@ enum class DebugLevel : uint8_t
 };
 
 constexpr const char *programName = "BlePrompter";
-constexpr const char *programVersion = "1.4.0";
+constexpr const char *programVersion = "1.4.1";
 constexpr const char *bluetoothDeviceName = "BlePrompter";
 constexpr DebugLevel configuredDebugLevel = DebugLevel::info;
 
@@ -21,6 +21,12 @@ constexpr unsigned long usbSerialStartupWaitMillis = 3000;
 
 constexpr uint8_t displayDataPin = 5;
 constexpr uint8_t displayClockPin = 6;
+
+constexpr uint8_t buttonPin = 9;
+constexpr uint8_t buttonPressedLevel = LOW;
+constexpr unsigned long buttonDebounceDurationMillis = 50;
+constexpr unsigned long deepSleepButtonHoldDurationMillis = 5000;
+constexpr unsigned long deepSleepCountdownIntervalMillis = 1000;
 
 constexpr unsigned long startupScreenDurationMillis = 2500;
 constexpr uint8_t maximumCommandLength = 120;

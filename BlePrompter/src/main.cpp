@@ -27,6 +27,21 @@ struct ReceivedCommand
     char text[maximumCommandLength + 1];
 };
 
+constexpr size_t savedDisplayBufferSize = 72 * 40 / 8;
+
+struct ButtonState
+{
+    bool lastRawButtonPressed = false;
+    bool stableButtonPressed = false;
+    bool countdownActive = false;
+    bool displayWasSleepingBeforeCountdown = false;
+    bool idleScreenWasDrawnBeforeCountdown = false;
+    unsigned long lastRawChangeMillis = 0;
+    unsigned long pressedStartedMillis = 0;
+    uint8_t lastDisplayedCountdownValue = 255;
+    uint8_t savedDisplayBuffer[savedDisplayBufferSize] = {};
+};
+
 U8G2_SSD1306_72X40_ER_F_HW_I2C display(U8G2_R0, U8X8_PIN_NONE);
 ArrowDisplay arrowDisplay;
 AsciiCharacterDisplay asciiCharacterDisplay;
@@ -35,6 +50,7 @@ PlayingCardDisplay playingCardDisplay;
 
 QueueHandle_t receivedCommandQueue = nullptr;
 NimBLECharacteristic *transmitCharacteristic = nullptr;
+ButtonState buttonState;
 
 bool displayInverted = false;
 bool displayUpsideDown = false;
@@ -143,9 +159,18 @@ void sendResponse(const char *message)
 
     if (bluetoothClientConnected && transmitCharacteristic != nullptr)
     {
-        transmitCharacteristic->setValue(message);
+        transmitCharacteristic->setValue(
+            reinterpret_cast<const uint8_t *>(message),
+            strlen(message));
         transmitCharacteristic->notify();
     }
+}
+
+void sendCommandStatus(const std::string &command, bool successful)
+{
+    std::string response = command;
+    response += successful ? ":OK" : ":ERROR";
+    sendResponse(response.c_str());
 }
 
 void applyDisplayRotation()
@@ -186,6 +211,11 @@ void waitForUsbSerialConnection()
     {
         delay(10);
     }
+}
+
+bool readButtonPressed()
+{
+    return digitalRead(buttonPin) == buttonPressedLevel;
 }
 
 std::string trimString(const std::string &value)
@@ -331,12 +361,34 @@ void drawSleepStatus(const char *firstLine, const char *secondLine)
     display.sendBuffer();
 }
 
+void drawDeepSleepCountdown(uint8_t secondsRemaining)
+{
+    char countdownText[2] = {
+        static_cast<char>('0' + secondsRemaining),
+        '\0'
+    };
+
+    prepareTextDisplay(false);
+    display.setFont(u8g2_font_6x10_tf);
+    display.setCursor(0, 8);
+    display.print("Tiefschlaf");
+
+    display.setFont(u8g2_font_logisoso20_tn);
+    const int16_t countdownWidth = display.getStrWidth(countdownText);
+    const int16_t countdownX = (display.getDisplayWidth() - countdownWidth) / 2;
+    display.setCursor(countdownX, 37);
+    display.print(countdownText);
+    display.sendBuffer();
+}
+
 void enterDisplaySleep()
 {
-    sendResponse("OK: Display-Schlaf aktiv");
     display.clearBuffer();
     display.sendBuffer();
-    display.setPowerSave(1);
+
+    // SSD1306: interne Charge-Pump deaktivieren und danach das Panel abschalten.
+    display.sendF("cac", 0x8D, 0x10, 0xAE);
+
     Wire.end();
     displaySleepActive = true;
     idleScreenDrawn = true;
@@ -361,13 +413,6 @@ void wakeFromDisplaySleep()
 
 void enterTimedDeepSleep(uint64_t sleepSeconds)
 {
-    char response[64] = {};
-    snprintf(
-        response,
-        sizeof(response),
-        "OK: Tiefschlaf für %llu Sekunden",
-        static_cast<unsigned long long>(sleepSeconds));
-    sendResponse(response);
     drawSleepStatus("Tiefschlaf", "Timer aktiv");
     delay(200);
 
@@ -377,12 +422,142 @@ void enterTimedDeepSleep(uint64_t sleepSeconds)
 
 void enterResetOnlyDeepSleep()
 {
-    sendResponse("OK: Tiefschlaf bis Reset");
     drawSleepStatus("Tiefschlaf", "Reset weckt");
     delay(200);
 
     esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
     esp_deep_sleep_start();
+}
+
+void saveCurrentDisplayStateForCountdown()
+{
+    buttonState.displayWasSleepingBeforeCountdown = displaySleepActive;
+    buttonState.idleScreenWasDrawnBeforeCountdown = idleScreenDrawn;
+
+    if (displaySleepActive)
+    {
+        return;
+    }
+
+    const size_t displayBufferSize =
+        static_cast<size_t>(display.getBufferTileWidth()) * 8 * display.getBufferTileHeight();
+    const size_t bytesToCopy = displayBufferSize < savedDisplayBufferSize
+        ? displayBufferSize
+        : savedDisplayBufferSize;
+
+    memcpy(buttonState.savedDisplayBuffer, display.getBufferPtr(), bytesToCopy);
+}
+
+void restoreDisplayStateAfterCountdown()
+{
+    buttonState.countdownActive = false;
+    buttonState.lastDisplayedCountdownValue = 255;
+
+    if (buttonState.displayWasSleepingBeforeCountdown)
+    {
+        enterDisplaySleep();
+        return;
+    }
+
+    const size_t displayBufferSize =
+        static_cast<size_t>(display.getBufferTileWidth()) * 8 * display.getBufferTileHeight();
+    const size_t bytesToCopy = displayBufferSize < savedDisplayBufferSize
+        ? displayBufferSize
+        : savedDisplayBufferSize;
+
+    memcpy(display.getBufferPtr(), buttonState.savedDisplayBuffer, bytesToCopy);
+    display.sendBuffer();
+    idleScreenDrawn = buttonState.idleScreenWasDrawnBeforeCountdown;
+}
+
+void startDeepSleepCountdown(unsigned long currentMillis)
+{
+    saveCurrentDisplayStateForCountdown();
+    wakeFromDisplaySleep();
+
+    buttonState.countdownActive = true;
+    buttonState.pressedStartedMillis = currentMillis;
+    buttonState.lastDisplayedCountdownValue = 5;
+    drawDeepSleepCountdown(buttonState.lastDisplayedCountdownValue);
+    writeDebugMessage(DebugLevel::info, "Tiefschlaf-Countdown gestartet");
+}
+
+void updateDeepSleepCountdown(unsigned long currentMillis)
+{
+    if (!buttonState.countdownActive)
+    {
+        return;
+    }
+
+    const unsigned long elapsedMillis = currentMillis - buttonState.pressedStartedMillis;
+    const uint8_t secondsRemaining = elapsedMillis >= deepSleepButtonHoldDurationMillis
+        ? 0
+        : static_cast<uint8_t>(
+            (deepSleepButtonHoldDurationMillis - elapsedMillis + deepSleepCountdownIntervalMillis - 1)
+            / deepSleepCountdownIntervalMillis);
+
+    if (secondsRemaining != buttonState.lastDisplayedCountdownValue)
+    {
+        buttonState.lastDisplayedCountdownValue = secondsRemaining;
+        drawDeepSleepCountdown(secondsRemaining);
+    }
+
+    if (elapsedMillis >= deepSleepButtonHoldDurationMillis)
+    {
+        writeDebugMessage(DebugLevel::info, "Tiefschlaf durch langen Buttondruck aktiviert");
+        delay(500);
+        enterResetOnlyDeepSleep();
+    }
+}
+
+void cancelDeepSleepCountdown()
+{
+    if (!buttonState.countdownActive)
+    {
+        return;
+    }
+
+    writeDebugMessage(DebugLevel::debug, "Tiefschlaf-Countdown abgebrochen");
+    restoreDisplayStateAfterCountdown();
+}
+
+void updateButtonState(unsigned long currentMillis)
+{
+    const bool rawButtonPressed = readButtonPressed();
+
+    if (rawButtonPressed != buttonState.lastRawButtonPressed)
+    {
+        buttonState.lastRawButtonPressed = rawButtonPressed;
+        buttonState.lastRawChangeMillis = currentMillis;
+        writeDebugMessage(DebugLevel::trace, rawButtonPressed ? "Roher Button-Zustand: gedrückt" : "Roher Button-Zustand: frei");
+    }
+
+    if (currentMillis - buttonState.lastRawChangeMillis < buttonDebounceDurationMillis)
+    {
+        if (rawButtonPressed)
+        {
+            updateDeepSleepCountdown(currentMillis);
+        }
+        return;
+    }
+
+    if (rawButtonPressed != buttonState.stableButtonPressed)
+    {
+        buttonState.stableButtonPressed = rawButtonPressed;
+
+        if (buttonState.stableButtonPressed)
+        {
+            writeDebugMessage(DebugLevel::info, "Button gedrückt");
+            startDeepSleepCountdown(currentMillis);
+        }
+        else
+        {
+            writeDebugMessage(DebugLevel::debug, "Button losgelassen");
+            cancelDeepSleepCountdown();
+        }
+    }
+
+    updateDeepSleepCountdown(currentMillis);
 }
 
 void drawPromptText(const char *text)
@@ -791,21 +966,21 @@ void processCommand(const char *rawCommand)
         if (commandName == "CL")
         {
             clearDisplay();
-            sendResponse("OK: Display cleared");
+            sendCommandStatus(command, true);
             return;
         }
 
         if (commandName == "I1")
         {
             displayInverted = true;
-            sendResponse("OK: Invert on");
+            sendCommandStatus(command, true);
             return;
         }
 
         if (commandName == "I0")
         {
             displayInverted = false;
-            sendResponse("OK: Invert off");
+            sendCommandStatus(command, true);
             return;
         }
 
@@ -813,7 +988,7 @@ void processCommand(const char *rawCommand)
         {
             displayUpsideDown = true;
             applyDisplayRotation();
-            sendResponse("OK: Upside down on");
+            sendCommandStatus(command, true);
             return;
         }
 
@@ -821,14 +996,14 @@ void processCommand(const char *rawCommand)
         {
             displayUpsideDown = false;
             applyDisplayRotation();
-            sendResponse("OK: Upside down off");
+            sendCommandStatus(command, true);
             return;
         }
 
         if (commandName.length() >= 2 && commandName.length() <= 3 && commandName[0] == 'S')
         {
             drawAsciiCharacters(commandName.substr(1).c_str());
-            sendResponse("OK: Symbol shown");
+            sendCommandStatus(command, true);
             return;
         }
 
@@ -836,7 +1011,7 @@ void processCommand(const char *rawCommand)
         if (tryParseCompactEspSymbolCommand(commandName, compactEspSymbol))
         {
             drawEspSymbol(compactEspSymbol);
-            sendResponse("OK: ESP symbol shown");
+            sendCommandStatus(command, true);
             return;
         }
 
@@ -844,7 +1019,7 @@ void processCommand(const char *rawCommand)
         if (tryParseCompactArrowCommand(commandName, compactCompassDirection))
         {
             drawArrow(compactCompassDirection);
-            sendResponse("OK: Arrow shown");
+            sendCommandStatus(command, true);
             return;
         }
 
@@ -852,7 +1027,7 @@ void processCommand(const char *rawCommand)
         if (tryParseCompactPlayingCardCommand(commandName, compactCardIndex))
         {
             drawPlayingCard(compactCardIndex);
-            sendResponse("OK: Card shown");
+            sendCommandStatus(command, true);
             return;
         }
     }
@@ -861,12 +1036,12 @@ void processCommand(const char *rawCommand)
     {
         if (argument.empty())
         {
-            sendResponse("ERROR: Text missing");
+            sendCommandStatus(command, false);
             return;
         }
 
         drawPromptText(argument.c_str());
-        sendResponse("OK: Text shown");
+        sendCommandStatus(command, true);
         return;
     }
 
@@ -874,12 +1049,12 @@ void processCommand(const char *rawCommand)
     {
         if (argument.empty())
         {
-            sendResponse("ERROR: Symbol missing");
+            sendCommandStatus(command, false);
             return;
         }
 
         drawAsciiCharacters(argument.c_str());
-        sendResponse("OK: Symbol shown");
+        sendCommandStatus(command, true);
         return;
     }
 
@@ -888,12 +1063,12 @@ void processCommand(const char *rawCommand)
         EspSymbol espSymbol = EspSymbol::circle;
         if (!tryParseEspSymbol(argument, espSymbol))
         {
-            sendResponse("ERROR: ESP symbol unknown");
+            sendCommandStatus(command, false);
             return;
         }
 
         drawEspSymbol(espSymbol);
-        sendResponse("OK: ESP symbol shown");
+        sendCommandStatus(command, true);
         return;
     }
 
@@ -902,12 +1077,12 @@ void processCommand(const char *rawCommand)
         CompassDirection compassDirection = CompassDirection::N;
         if (!tryParseCompassDirection(argument, compassDirection))
         {
-            sendResponse("ERROR: Arrow unknown");
+            sendCommandStatus(command, false);
             return;
         }
 
         drawArrow(compassDirection);
-        sendResponse("OK: Arrow shown");
+        sendCommandStatus(command, true);
         return;
     }
 
@@ -916,12 +1091,12 @@ void processCommand(const char *rawCommand)
         uint8_t cardIndex = 0;
         if (!tryParsePlayingCard(argument, cardIndex))
         {
-            sendResponse("ERROR: Card unknown");
+            sendCommandStatus(command, false);
             return;
         }
 
         drawPlayingCard(cardIndex);
-        sendResponse("OK: Card shown");
+        sendCommandStatus(command, true);
         return;
     }
 
@@ -930,17 +1105,17 @@ void processCommand(const char *rawCommand)
         if (isEnabledText(argument))
         {
             displayInverted = true;
-            sendResponse("OK: Invert on");
+            sendCommandStatus(command, true);
             return;
         }
         if (isDisabledText(argument))
         {
             displayInverted = false;
-            sendResponse("OK: Invert off");
+            sendCommandStatus(command, true);
             return;
         }
 
-        sendResponse("ERROR: Use ON or OFF");
+        sendCommandStatus(command, false);
         return;
     }
 
@@ -955,6 +1130,7 @@ void processCommand(const char *rawCommand)
 
         if (sleepMode == "DISPLAY")
         {
+            sendCommandStatus(command, true);
             enterDisplaySleep();
             return;
         }
@@ -964,28 +1140,30 @@ void processCommand(const char *rawCommand)
             uint64_t sleepSeconds = 0;
             if (!tryParsePositiveSeconds(sleepArgument, sleepSeconds))
             {
-                sendResponse("FEHLER: Sekunden fehlen oder sind ungültig");
+                sendCommandStatus(command, false);
                 return;
             }
 
+            sendCommandStatus(command, true);
             enterTimedDeepSleep(sleepSeconds);
             return;
         }
 
         if (sleepMode == "RESET")
         {
+            sendCommandStatus(command, true);
             enterResetOnlyDeepSleep();
             return;
         }
 
-        sendResponse("FEHLER: SLEEP DISPLAY, SLEEP DEEP <Sekunden> oder SLEEP RESET nutzen");
+        sendCommandStatus(command, false);
         return;
     }
 
     if (commandName == "CLEAR" || commandName == "CLS")
     {
         clearDisplay();
-        sendResponse("OK: Display cleared");
+        sendCommandStatus(command, true);
         return;
     }
 
@@ -995,7 +1173,7 @@ void processCommand(const char *rawCommand)
         return;
     }
 
-    sendResponse("ERROR: Command unknown");
+    sendCommandStatus(command, false);
 }
 
 class BluetoothServerCallbacks : public NimBLEServerCallbacks
@@ -1064,6 +1242,7 @@ void setup()
     waitForUsbSerialConnection();
 
     receivedCommandQueue = xQueueCreate(6, sizeof(ReceivedCommand));
+    pinMode(buttonPin, INPUT_PULLUP);
 
     Wire.begin(displayDataPin, displayClockPin);
     display.begin();
@@ -1078,11 +1257,20 @@ void setup()
 
 void loop()
 {
+    const unsigned long currentMillis = millis();
+
     if (shouldRestartBluetoothAdvertising)
     {
         NimBLEDevice::getAdvertising()->start();
         shouldRestartBluetoothAdvertising = false;
         writeDebugMessage(DebugLevel::info, "BLE advertising restarted");
+    }
+
+    updateButtonState(currentMillis);
+    if (buttonState.countdownActive)
+    {
+        delay(10);
+        return;
     }
 
     ReceivedCommand receivedCommand = {};
@@ -1092,7 +1280,7 @@ void loop()
         processCommand(receivedCommand.text);
     }
 
-    if (!displaySleepActive && !idleScreenDrawn && millis() >= startupFinishedMillis)
+    if (!displaySleepActive && !idleScreenDrawn && currentMillis >= startupFinishedMillis)
     {
         drawIdleScreen();
     }

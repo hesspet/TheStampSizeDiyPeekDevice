@@ -1,6 +1,6 @@
 ---
 Datum: 26.05.2026
-Version: 8
+Version: 10
 Autor: Peter Heß, Germany (+Codex)
 ---
 
@@ -18,6 +18,7 @@ Die Firmware zeigt per BLE empfangene Befehle auf dem OLED an. Ziel ist eine ein
 | --- | --- | --- |
 | OLED SDA | GPIO5 | I2C-Datenleitung |
 | OLED SCL | GPIO6 | I2C-Taktleitung |
+| Button | GPIO9 | `INPUT_PULLUP`, gedrückt ist `LOW`; langer Druck aktiviert Tiefschlaf |
 
 ## Startanzeige
 
@@ -50,6 +51,7 @@ Wichtige Implementierungsdetails:
 - Schreib-Characteristic: `6e400002-b5a3-f393-e0a9-e50e24dcca9e`.
 - Antwort-Characteristic: `6e400003-b5a3-f393-e0a9-e50e24dcca9e`.
 - Befehle werden als UTF-8-Text gesendet, zum Beispiel `CHX`, `ARROW NE` oder `TEXT Door|open`.
+- Nach der Verarbeitung sendet die Firmware `<Befehl>:OK` oder `<Befehl>:ERROR` als UTF-8-Text zurück. Der Befehlsteil ist der außen getrimmte Originalbefehl; `HELP`, `H` und `?` senden nur die Befehlsübersicht.
 - Für Browser ist HTTPS oder `localhost` relevant, weil Web Bluetooth nur in sicheren Kontexten verfügbar ist.
 
 Der konkrete JavaScript-Einstieg liegt in `./WEB_BLUETOOTH.md`.
@@ -68,6 +70,7 @@ Unterstützt werden:
 - invertierte Darstellung mit `INVERT`
 - 180-Grad-Darstellung für kopfüber montierte Displays mit `U1` und `U0`
 - Sleep-Modi mit `SLEEP DISPLAY`, `SLEEP DEEP <Sekunden>` und `SLEEP RESET`
+- Sleep-Button auf GPIO9: nach 5 Sekunden Halten zählt das OLED von `5` bis `0` und aktiviert Tiefschlaf bis Reset/EN
 - Löschen der Anzeige mit `CLEAR`
 - kurze Hilfe mit `HELP`
 - kurze Makro-Aliasse wie `SA`, `SOK`, `EC`, `EW`, `AN`, `ASW`, `CHX`, `CJ1`, `I1`, `I0`, `U1`, `U0`, `CL` und `H`
@@ -80,6 +83,8 @@ Unterstützt werden:
 `SLEEP DEEP <Sekunden>` schaltet in den ESP32-Tiefschlaf mit Timer-Aufwachen. BLE trennt dabei, und die Firmware startet nach Ablauf der Zeit neu.
 
 `SLEEP RESET` schaltet in den ESP32-Tiefschlaf ohne Timer. Das Gerät wacht erst durch Reset oder EN wieder auf.
+
+GPIO9 dient zusätzlich als reiner Sleep-Button. Wird der Button länger als 5 Sekunden gehalten, zeigt das OLED `Tiefschlaf` und einen Countdown von `5` bis `0`. Wird der Button vorher losgelassen, wird der vorherige OLED-Zustand wiederhergestellt. Nach Ablauf des Countdowns wird derselbe Reset-Tiefschlaf wie bei `SLEEP RESET` aktiviert. GPIO9 wird bewusst nicht als Deep-Sleep-Weckquelle genutzt, weil die ESP32-C3-SDK-Unterstützung für Deep-Sleep-GPIO-Wakeup nur GPIO0 bis GPIO5 zulässt; Aufwachen erfolgt deshalb über Reset oder EN.
 
 ## Display-Bibliothek
 

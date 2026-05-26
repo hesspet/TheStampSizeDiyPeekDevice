@@ -1,6 +1,6 @@
 ---
 Datum: 26.05.2026
-Version: 8
+Version: 9
 Autor: Peter Heß, Germany (+Codex)
 ---
 
@@ -19,6 +19,28 @@ Autor: Peter Heß, Germany (+Codex)
 In Android-Apps wie nRF Connect, Serial Bluetooth Terminal oder MacroDroid-BLE-Plugins werden die Befehle als Text an die RX-Characteristic geschrieben. Ein Zeilenumbruch ist erlaubt, aber nicht erforderlich.
 
 Für JavaScript/Web Bluetooth gelten dieselben Befehle. Die Webseite schreibt UTF-8-codierten Text in die RX-Characteristic. Details für die spätere JavaScript-Seite stehen in `WEB_BLUETOOTH.md`.
+
+## Antworten
+
+Nach der Verarbeitung eines Befehls sendet die Firmware auf der TX-Characteristic den außen getrimmten Originalbefehl mit Statussuffix zurück.
+
+Format:
+
+```text
+<Befehl>:OK
+<Befehl>:ERROR
+```
+
+Beispiele:
+
+```text
+SOK:OK
+TEXT Hallo:OK
+CARD Foo:ERROR
+INVERT MAYBE:ERROR
+```
+
+`HELP`, `H` und `?` bleiben Sonderfälle und senden nur die kurze Befehlsübersicht.
 
 ## Kurzbefehle für Makros
 
