@@ -43,4 +43,5 @@ if "%STARTED_WITH_COMMAND_CLOSE%"=="1" if "%STARTED_FROM_EXPLORER%"=="1" (
     echo.
     pause
 )
+pause
 exit /b %EXIT_STATUS%
