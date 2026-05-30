@@ -10,7 +10,7 @@ Autor: Peter Heß, Germany (+Codex)
 
 ## BLE-Verbindung
 
-- Bluetooth-Name: `BlePrompter`
+- Bluetooth-Name: `BlePrompter-xxxx`, wobei `xxxx` aus der ESP32-Chip-ID abgeleitet wird
 - Service-UUID: `6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
 - RX-Characteristic zum Schreiben: `6E400002-B5A3-F393-E0A9-E50E24DCCA9E`
 - TX-Characteristic für Antworten: `6E400003-B5A3-F393-E0A9-E50E24DCCA9E`
@@ -275,12 +275,21 @@ Die Einstellung ist für Displays gedacht, die kopfüber montiert sind. `U1` und
 ```text
 SLEEP DISPLAY
 SLEEP DEEP 60
+SLEEP CYCLE
+SLEEP CYCLE 30 10
 SLEEP RESET
+WAKE
 ```
 
 `SLEEP DISPLAY` schaltet das OLED und den I2C-Bus ab. BLE bleibt aktiv. Der nächste empfangene BLE-Befehl aktiviert das Display sofort wieder und wird direkt ausgeführt.
 
 `SLEEP DEEP <Sekunden>` versetzt das Gerät in Tiefschlaf und aktiviert einen Timer als Aufwachquelle. Danach trennt BLE. Nach Ablauf der Sekunden startet die Firmware regulär neu.
+
+`SLEEP CYCLE` versetzt das Gerät in zyklischen Tiefschlaf. Standard sind `30 s` Schlafdauer und `10 s` Wachfenster. Nach jedem fünften Zyklus bleibt das Gerät `60 s` erreichbar, damit Smartphone-Scans das Gerät sicherer finden.
+
+`SLEEP CYCLE <Schlafsekunden> <Listensekunden>` nutzt eigene Werte. Erlaubt sind `5` bis `60` Sekunden Schlafdauer und `10` bis `120` Sekunden Listenzeit. Während eines Wachfensters zeigt das OLED `BlePrompter`, `Wachfenster`, die Restzeit und die Gerätekennung.
+
+`WAKE` beendet den zyklischen Schlafmodus nach einer Verbindung und hält das Gerät aktiv.
 
 `SLEEP RESET` versetzt das Gerät in Tiefschlaf ohne Timer. Danach trennt BLE. Das Gerät wacht erst durch Reset oder EN wieder auf.
 

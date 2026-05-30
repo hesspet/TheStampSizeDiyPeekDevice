@@ -42,6 +42,14 @@ struct ButtonState
     uint8_t savedDisplayBuffer[savedDisplayBufferSize] = {};
 };
 
+struct CycleSleepState
+{
+    bool active = false;
+    uint32_t sleepSeconds = defaultCycleSleepSeconds;
+    uint32_t listenSeconds = defaultCycleListenSeconds;
+    uint32_t cycleCount = 0;
+};
+
 U8G2_SSD1306_72X40_ER_F_HW_I2C display(U8G2_R0, U8X8_PIN_NONE);
 ArrowDisplay arrowDisplay;
 AsciiCharacterDisplay asciiCharacterDisplay;
@@ -51,6 +59,7 @@ PlayingCardDisplay playingCardDisplay;
 QueueHandle_t receivedCommandQueue = nullptr;
 NimBLECharacteristic *transmitCharacteristic = nullptr;
 ButtonState buttonState;
+RTC_DATA_ATTR CycleSleepState cycleSleepState;
 
 bool displayInverted = false;
 bool displayUpsideDown = false;
@@ -58,7 +67,13 @@ bool displaySleepActive = false;
 bool bluetoothClientConnected = false;
 bool shouldRestartBluetoothAdvertising = false;
 bool idleScreenDrawn = false;
+bool cycleListenWindowActive = false;
 unsigned long startupFinishedMillis = 0;
+unsigned long cycleListenWindowEndsMillis = 0;
+unsigned long nextCycleListenWindowDisplayUpdateMillis = 0;
+uint32_t activeCycleListenSeconds = defaultCycleListenSeconds;
+char deviceIdentifier[8] = "BP-0000";
+char bluetoothAdvertisingName[24] = "BlePrompter";
 
 const char *getDebugLevelName(DebugLevel debugLevel)
 {
@@ -153,6 +168,18 @@ const char *getEuropeanBuildDate()
     return formattedBuildDate;
 }
 
+void initializeDeviceIdentity()
+{
+    const uint16_t shortIdentifier = static_cast<uint16_t>(ESP.getEfuseMac() & 0xFFFFULL);
+    snprintf(deviceIdentifier, sizeof(deviceIdentifier), "BP-%04X", shortIdentifier);
+    snprintf(
+        bluetoothAdvertisingName,
+        sizeof(bluetoothAdvertisingName),
+        "%s-%04X",
+        bluetoothDeviceName,
+        shortIdentifier);
+}
+
 void sendResponse(const char *message)
 {
     writeLineToOutputs(message);
@@ -193,7 +220,9 @@ void writeStartupHeader()
     writeTextToOutputs("Debuglevel: ");
     writeLineToOutputs(getDebugLevelName(configuredDebugLevel));
     writeTextToOutputs("Bluetooth-Name: ");
-    writeLineToOutputs(bluetoothDeviceName);
+    writeLineToOutputs(bluetoothAdvertisingName);
+    writeTextToOutputs("Gerätekennung: ");
+    writeLineToOutputs(deviceIdentifier);
     writeLineToOutputs("BLE-Profil: Nordic UART Service");
     writeLineToOutputs("Board: ESP32-C3 OLED 72 x 40");
     writeLineToOutputs("========================================");
@@ -332,11 +361,11 @@ void drawIdleScreen()
     prepareTextDisplay(false);
     display.setFont(u8g2_font_6x10_tf);
     display.setCursor(0, 8);
-    display.print("BLE ready");
+    display.print("BLE bereit");
     display.setCursor(0, 18);
-    display.print(bluetoothDeviceName);
+    display.print(deviceIdentifier);
     display.setCursor(0, 28);
-    display.print(bluetoothClientConnected ? "Connected" : "Waiting...");
+    display.print(bluetoothClientConnected ? "Verbunden" : "Wartet...");
     display.setCursor(0, 38);
     display.print("Text/Arrow");
     display.sendBuffer();
@@ -361,6 +390,25 @@ void drawSleepStatus(const char *firstLine, const char *secondLine)
     display.sendBuffer();
 }
 
+void drawCycleListenWindowStatus(uint32_t remainingSeconds)
+{
+    char remainingText[18];
+    snprintf(remainingText, sizeof(remainingText), "Noch %lus", static_cast<unsigned long>(remainingSeconds));
+
+    prepareTextDisplay(false);
+    display.setFont(u8g2_font_6x10_tf);
+    display.setCursor(0, 8);
+    display.print(programName);
+    display.setCursor(0, 18);
+    display.print("Wachfenster");
+    display.setCursor(0, 28);
+    display.print(remainingText);
+    display.setCursor(0, 38);
+    display.print(deviceIdentifier);
+    display.sendBuffer();
+    idleScreenDrawn = true;
+}
+
 void drawDeepSleepCountdown(uint8_t secondsRemaining)
 {
     char countdownText[2] = {
@@ -371,7 +419,7 @@ void drawDeepSleepCountdown(uint8_t secondsRemaining)
     prepareTextDisplay(false);
     display.setFont(u8g2_font_6x10_tf);
     display.setCursor(0, 8);
-    display.print("Tiefschlaf");
+    display.print("Zykl. Schlaf");
 
     display.setFont(u8g2_font_logisoso20_tn);
     const int16_t countdownWidth = display.getStrWidth(countdownText);
@@ -403,6 +451,82 @@ void deactivateDisplayBeforeDeepSleep()
     display.sendF("cac", 0x8D, 0x10, 0xAE);
 
     Wire.end();
+}
+
+uint32_t getActiveCycleListenSeconds()
+{
+    if (cycleSleepState.cycleCount > 0
+        && cycleLongListenEveryCycleCount > 0
+        && cycleSleepState.cycleCount % cycleLongListenEveryCycleCount == 0)
+    {
+        return cycleLongListenSeconds;
+    }
+
+    return cycleSleepState.listenSeconds;
+}
+
+void configureCycleSleep(uint32_t sleepSeconds, uint32_t listenSeconds)
+{
+    cycleSleepState.active = true;
+    cycleSleepState.sleepSeconds = sleepSeconds;
+    cycleSleepState.listenSeconds = listenSeconds;
+    cycleSleepState.cycleCount = 0;
+}
+
+void stopCycleSleepMode()
+{
+    cycleSleepState.active = false;
+    cycleListenWindowActive = false;
+}
+
+void enterCycleDeepSleep()
+{
+    char secondLine[20];
+    snprintf(
+        secondLine,
+        sizeof(secondLine),
+        "%lus / %lus",
+        static_cast<unsigned long>(cycleSleepState.sleepSeconds),
+        static_cast<unsigned long>(cycleSleepState.listenSeconds));
+
+    drawSleepStatus("Zykl. Schlaf", secondLine);
+    delay(200);
+    deactivateDisplayBeforeDeepSleep();
+
+    esp_sleep_enable_timer_wakeup(static_cast<uint64_t>(cycleSleepState.sleepSeconds) * 1000000ULL);
+    esp_deep_sleep_start();
+}
+
+void startCycleListenWindow(unsigned long currentMillis)
+{
+    activeCycleListenSeconds = getActiveCycleListenSeconds();
+    cycleListenWindowActive = true;
+    cycleListenWindowEndsMillis = currentMillis + activeCycleListenSeconds * 1000UL;
+    nextCycleListenWindowDisplayUpdateMillis = 0;
+    drawCycleListenWindowStatus(activeCycleListenSeconds);
+}
+
+void updateCycleListenWindow(unsigned long currentMillis)
+{
+    if (!cycleListenWindowActive || bluetoothClientConnected)
+    {
+        return;
+    }
+
+    if (currentMillis >= cycleListenWindowEndsMillis)
+    {
+        NimBLEDevice::getAdvertising()->stop();
+        enterCycleDeepSleep();
+        return;
+    }
+
+    if (currentMillis >= nextCycleListenWindowDisplayUpdateMillis)
+    {
+        const uint32_t remainingSeconds = static_cast<uint32_t>(
+            (cycleListenWindowEndsMillis - currentMillis + 999UL) / 1000UL);
+        drawCycleListenWindowStatus(remainingSeconds);
+        nextCycleListenWindowDisplayUpdateMillis = currentMillis + 1000UL;
+    }
 }
 
 void wakeFromDisplaySleep()
@@ -517,9 +641,10 @@ void updateDeepSleepCountdown(unsigned long currentMillis)
 
     if (elapsedMillis >= deepSleepButtonHoldDurationMillis)
     {
-        writeDebugMessage(DebugLevel::info, "Tiefschlaf durch langen Buttondruck aktiviert");
+        writeDebugMessage(DebugLevel::info, "Zyklischer Schlaf durch langen Buttondruck aktiviert");
+        configureCycleSleep(defaultCycleSleepSeconds, defaultCycleListenSeconds);
         delay(500);
-        enterResetOnlyDeepSleep();
+        enterCycleDeepSleep();
     }
 }
 
@@ -945,9 +1070,52 @@ bool tryParsePositiveSeconds(const std::string &text, uint64_t &seconds)
     return true;
 }
 
+bool isSecondsInRange(uint64_t seconds, uint32_t minimumSeconds, uint32_t maximumSeconds)
+{
+    return seconds >= minimumSeconds && seconds <= maximumSeconds;
+}
+
+bool tryParseCycleSleepArguments(
+    const std::string &text,
+    uint32_t &sleepSeconds,
+    uint32_t &listenSeconds)
+{
+    const std::string trimmedText = trimString(text);
+    if (trimmedText.empty())
+    {
+        sleepSeconds = defaultCycleSleepSeconds;
+        listenSeconds = defaultCycleListenSeconds;
+        return true;
+    }
+
+    const size_t separatorIndex = trimmedText.find(' ');
+    if (separatorIndex == std::string::npos)
+    {
+        return false;
+    }
+
+    uint64_t parsedSleepSeconds = 0;
+    uint64_t parsedListenSeconds = 0;
+    if (!tryParsePositiveSeconds(trimmedText.substr(0, separatorIndex), parsedSleepSeconds)
+        || !tryParsePositiveSeconds(trimString(trimmedText.substr(separatorIndex + 1)), parsedListenSeconds))
+    {
+        return false;
+    }
+
+    if (!isSecondsInRange(parsedSleepSeconds, minimumCycleSleepSeconds, maximumCycleSleepSeconds)
+        || !isSecondsInRange(parsedListenSeconds, minimumCycleListenSeconds, maximumCycleListenSeconds))
+    {
+        return false;
+    }
+
+    sleepSeconds = static_cast<uint32_t>(parsedSleepSeconds);
+    listenSeconds = static_cast<uint32_t>(parsedListenSeconds);
+    return true;
+}
+
 void sendHelp()
 {
-    sendResponse("Befehle: TEXT, S*, E*, A*, CHX, CJ1, I1, I0, U1, U0, SLEEP, CL, H");
+    sendResponse("Befehle: TEXT, S*, E*, A*, CHX, CJ1, I1, I0, U1, U0, SLEEP, WAKE, CL, H");
 }
 
 void processCommand(const char *rawCommand)
@@ -967,6 +1135,14 @@ void processCommand(const char *rawCommand)
     const std::string argument = separatorIndex == std::string::npos
         ? ""
         : trimString(command.substr(separatorIndex + 1));
+
+    if (commandName == "WAKE")
+    {
+        stopCycleSleepMode();
+        sendCommandStatus(command, true);
+        idleScreenDrawn = false;
+        return;
+    }
 
     if (separatorIndex == std::string::npos)
     {
@@ -1162,6 +1338,22 @@ void processCommand(const char *rawCommand)
             return;
         }
 
+        if (sleepMode == "CYCLE")
+        {
+            uint32_t sleepSeconds = defaultCycleSleepSeconds;
+            uint32_t listenSeconds = defaultCycleListenSeconds;
+            if (!tryParseCycleSleepArguments(sleepArgument, sleepSeconds, listenSeconds))
+            {
+                sendCommandStatus(command, false);
+                return;
+            }
+
+            sendCommandStatus(command, true);
+            configureCycleSleep(sleepSeconds, listenSeconds);
+            enterCycleDeepSleep();
+            return;
+        }
+
         if (sleepMode == "RESET")
         {
             sendCommandStatus(command, true);
@@ -1195,6 +1387,7 @@ public:
     void onConnect(NimBLEServer *server) override
     {
         bluetoothClientConnected = true;
+        stopCycleSleepMode();
         idleScreenDrawn = displaySleepActive;
         writeDebugMessage(DebugLevel::info, "BLE connected");
     }
@@ -1219,7 +1412,7 @@ public:
 
 void startBluetooth()
 {
-    NimBLEDevice::init(bluetoothDeviceName);
+    NimBLEDevice::init(bluetoothAdvertisingName);
     NimBLEDevice::setPower(ESP_PWR_LVL_P9);
     NimBLEDevice::setSecurityAuth(true, false, true);
     NimBLEDevice::setSecurityIOCap(BLE_HS_IO_NO_INPUT_OUTPUT);
@@ -1242,7 +1435,12 @@ void startBluetooth()
 
     NimBLEAdvertising *advertising = NimBLEDevice::getAdvertising();
     advertising->addServiceUUID(nordicUartServiceUuid);
+    advertising->setName(bluetoothAdvertisingName);
     advertising->setScanResponse(true);
+    advertising->setMinInterval(32);
+    advertising->setMaxInterval(64);
+    advertising->setMinPreferred(0x06);
+    advertising->setMaxPreferred(0x12);
     advertising->start();
 
     writeDebugMessage(DebugLevel::info, "BLE advertising started");
@@ -1251,8 +1449,16 @@ void startBluetooth()
 void setup()
 {
     Serial.begin(serialBaudRate);
-    delay(200);
-    waitForUsbSerialConnection();
+    delay(100);
+    initializeDeviceIdentity();
+
+    const bool isCycleTimerWakeup =
+        cycleSleepState.active && esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER;
+    if (!isCycleTimerWakeup)
+    {
+        cycleSleepState.active = false;
+        waitForUsbSerialConnection();
+    }
 
     receivedCommandQueue = xQueueCreate(6, sizeof(ReceivedCommand));
     pinMode(buttonPin, INPUT_PULLUP);
@@ -1262,10 +1468,18 @@ void setup()
     display.enableUTF8Print();
 
     writeStartupHeader();
+    startBluetooth();
+
+    if (isCycleTimerWakeup)
+    {
+        cycleSleepState.cycleCount++;
+        startupFinishedMillis = ULONG_MAX;
+        startCycleListenWindow(millis());
+        return;
+    }
+
     drawStartupScreen();
     startupFinishedMillis = millis() + startupScreenDurationMillis;
-
-    startBluetooth();
 }
 
 void loop()
@@ -1292,6 +1506,8 @@ void loop()
         wakeFromDisplaySleep();
         processCommand(receivedCommand.text);
     }
+
+    updateCycleListenWindow(currentMillis);
 
     if (!displaySleepActive && !idleScreenDrawn && currentMillis >= startupFinishedMillis)
     {
