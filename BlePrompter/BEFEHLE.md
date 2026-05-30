@@ -79,7 +79,9 @@ CLS
 CL
 ```
 
-Löscht die OLED-Anzeige.
+Löscht die OLED-Anzeige bis auf je ein kleines 2x2-Pixel-Quadrat in allen vier Ecken. Dadurch bleibt erkennbar, dass das Display aktiv ist und eine Verbindung besteht.
+
+Clients dürfen direkt nach `CLEAR`, `CLS` oder `CL` kein `SLEEP DISPLAY` senden, wenn dieser sichtbare Clear-Zustand erhalten bleiben soll. `SLEEP DISPLAY` schaltet das OLED ab und entfernt dadurch auch die Eckenmarkierungen.
 
 ## Text
 
@@ -272,6 +274,8 @@ Die Einstellung ist für Displays gedacht, die kopfüber montiert sind. `U1` und
 
 ## Sleep
 
+Nach Bestromung oder Reset startet das Gerät automatisch den zyklischen Schlafmodus mit einem ersten Wachfenster von `10 s`. Dadurch ist BLE direkt nach dem Reset kurz online. Danach läuft der Zyklus mit `30 s` Schlafdauer und `10 s` Wachfenster weiter. Eine BLE-Verbindung pausiert den Zyklus für die Bedienung; nach der Trennung wird der Zyklus automatisch wieder gestartet.
+
 ```text
 SLEEP DISPLAY
 SLEEP DEEP 60
@@ -281,7 +285,7 @@ SLEEP RESET
 WAKE
 ```
 
-`SLEEP DISPLAY` schaltet das OLED und den I2C-Bus ab. BLE bleibt aktiv. Der nächste empfangene BLE-Befehl aktiviert das Display sofort wieder und wird direkt ausgeführt.
+`SLEEP DISPLAY` schaltet das OLED und den I2C-Bus ab. BLE bleibt aktiv. Der nächste empfangene BLE-Befehl aktiviert das Display sofort wieder und wird direkt ausgeführt. Dieser Befehl ist nicht als Abschluss nach `CLEAR` geeignet, wenn die Clear-Markierungen als sichtbarer Verbindungsindikator stehen bleiben sollen.
 
 `SLEEP DEEP <Sekunden>` versetzt das Gerät in Tiefschlaf und aktiviert einen Timer als Aufwachquelle. Danach trennt BLE. Nach Ablauf der Sekunden startet die Firmware regulär neu.
 
@@ -289,7 +293,7 @@ WAKE
 
 `SLEEP CYCLE <Schlafsekunden> <Listensekunden>` nutzt eigene Werte. Erlaubt sind `5` bis `60` Sekunden Schlafdauer und `10` bis `120` Sekunden Listenzeit. Während eines Wachfensters zeigt das OLED `BlePrompter`, `Wachfenster`, die Restzeit und die Gerätekennung.
 
-`WAKE` beendet den zyklischen Schlafmodus nach einer Verbindung und hält das Gerät aktiv.
+`WAKE` beendet den laufenden zyklischen Schlafmodus während einer aktiven Verbindung. Nach einer späteren BLE-Trennung startet das Gerät den zyklischen Tiefschlaf wieder automatisch.
 
 `SLEEP RESET` versetzt das Gerät in Tiefschlaf ohne Timer. Danach trennt BLE. Das Gerät wacht erst durch Reset oder EN wieder auf.
 

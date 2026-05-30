@@ -66,6 +66,7 @@ bool displayUpsideDown = false;
 bool displaySleepActive = false;
 bool bluetoothClientConnected = false;
 bool shouldRestartBluetoothAdvertising = false;
+bool shouldEnterCycleSleepAfterBluetoothDisconnect = false;
 bool idleScreenDrawn = false;
 bool cycleListenWindowActive = false;
 unsigned long startupFinishedMillis = 0;
@@ -372,9 +373,24 @@ void drawIdleScreen()
     idleScreenDrawn = true;
 }
 
+void drawClearDisplayMarkers()
+{
+    display.setDrawColor(1);
+
+    const uint8_t markerSize = clearDisplayMarkerSizePixels;
+    const uint8_t rightMarkerX = display.getDisplayWidth() - markerSize;
+    const uint8_t lowerMarkerY = display.getDisplayHeight() - markerSize;
+
+    display.drawBox(0, 0, markerSize, markerSize);
+    display.drawBox(rightMarkerX, 0, markerSize, markerSize);
+    display.drawBox(0, lowerMarkerY, markerSize, markerSize);
+    display.drawBox(rightMarkerX, lowerMarkerY, markerSize, markerSize);
+}
+
 void clearDisplay()
 {
     display.clearBuffer();
+    drawClearDisplayMarkers();
     display.sendBuffer();
     idleScreenDrawn = true;
 }
@@ -1395,7 +1411,15 @@ public:
     void onDisconnect(NimBLEServer *server) override
     {
         bluetoothClientConnected = false;
-        shouldRestartBluetoothAdvertising = true;
+        if (startCycleSleepAfterBluetoothDisconnect)
+        {
+            shouldEnterCycleSleepAfterBluetoothDisconnect = true;
+            shouldRestartBluetoothAdvertising = false;
+        }
+        else
+        {
+            shouldRestartBluetoothAdvertising = true;
+        }
         idleScreenDrawn = displaySleepActive;
         writeDebugMessage(DebugLevel::info, "BLE disconnected");
     }
@@ -1452,9 +1476,12 @@ void setup()
     delay(100);
     initializeDeviceIdentity();
 
+    const esp_sleep_wakeup_cause_t wakeupCause = esp_sleep_get_wakeup_cause();
     const bool isCycleTimerWakeup =
-        cycleSleepState.active && esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER;
-    if (!isCycleTimerWakeup)
+        cycleSleepState.active && wakeupCause == ESP_SLEEP_WAKEUP_TIMER;
+    const bool shouldStartCycleSleepAfterPowerOn =
+        startCycleSleepOnPowerOn && wakeupCause == ESP_SLEEP_WAKEUP_UNDEFINED;
+    if (!isCycleTimerWakeup && !shouldStartCycleSleepAfterPowerOn)
     {
         cycleSleepState.active = false;
         waitForUsbSerialConnection();
@@ -1468,6 +1495,16 @@ void setup()
     display.enableUTF8Print();
 
     writeStartupHeader();
+
+    if (shouldStartCycleSleepAfterPowerOn)
+    {
+        configureCycleSleep(defaultCycleSleepSeconds, defaultCycleListenSeconds);
+        startBluetooth();
+        startupFinishedMillis = ULONG_MAX;
+        startCycleListenWindow(millis());
+        return;
+    }
+
     startBluetooth();
 
     if (isCycleTimerWakeup)
@@ -1485,6 +1522,14 @@ void setup()
 void loop()
 {
     const unsigned long currentMillis = millis();
+
+    if (shouldEnterCycleSleepAfterBluetoothDisconnect && !bluetoothClientConnected)
+    {
+        shouldEnterCycleSleepAfterBluetoothDisconnect = false;
+        configureCycleSleep(cycleSleepState.sleepSeconds, cycleSleepState.listenSeconds);
+        enterCycleDeepSleep();
+        return;
+    }
 
     if (shouldRestartBluetoothAdvertising)
     {

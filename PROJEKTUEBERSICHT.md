@@ -1,6 +1,6 @@
 ---
-Datum: 26.05.2026
-Version: 9
+Datum: 30.05.2026
+Version: 10
 Autor: Peter Heß, Germany (+Codex)
 ---
 # Projektübersicht
@@ -23,7 +23,7 @@ Dieses Repository sammelt mehrere PlatformIO-Unterprojekte für das kleine ESP32
 | Unterprojekt | Zweck |
 | --- | --- |
 | [BoardTest](BoardTest/PROJEKTUEBERSICHT.md) | Test-Firmware `1.2.0` für OLED, Buildanzeige, GPIO9-gesteuerten automatischen Testmodus, projektweite Display-Library, selbst gezeichnete Pfeile, ASCII-Zeichenanzeige, Spielkarten und invertierte Anzeige des ESP32-C3-OLED-Boards. |
-| [BlePrompter](BlePrompter/PROJEKTUEBERSICHT.md) | BLE-UART-Firmware `1.4.0` mit Nordic UART Service für Android-Apps, MacroDroid/BLE-Plugins und Terminal-Makros. Zeigt Text, Pfeile, Symbole und Spielkarten auf dem OLED an und unterstützt Display-Schlaf sowie Tiefschlaf-Kommandos. |
+| [BlePrompter](BlePrompter/PROJEKTUEBERSICHT.md) | BLE-UART-Firmware `1.5.3` mit Nordic UART Service für Android-Apps, MacroDroid/BLE-Plugins und Terminal-Makros. Zeigt Text, Pfeile, ESP-Symbole und Spielkarten auf dem OLED an, unterstützt Display-Schlaf und zyklischen Tiefschlaf, startet nach Reset mit einem BLE-Wachfenster und nutzt Clear-Markierungen als sichtbaren Verbindungsindikator. |
 | [EnduranceTest](EnduranceTest/PROJEKTUEBERSICHT.md) | Dauertest-Firmware `1.0.0` für BLE-Scan, wechselnde OLED-Anzeigen, WLAN-Scan, simulierte Nutzung und UDP-Broadcast der RAM-Protokolldaten nach jedem Testzyklus. |
 | [EnduranceTestClient](EnduranceTestClient/PROJEKTUEBERSICHT.md) | Python-Client zum dauerhaften Empfang der `EnduranceTest`-UDP-Broadcasts und JSONL-Protokollierung im Temp-Verzeichnis. |
 
@@ -41,7 +41,7 @@ BLE-Kenndaten:
 - RX-Characteristic zum Schreiben: `6E400002-B5A3-F393-E0A9-E50E24DCCA9E`
 - TX-Characteristic für Antworten: `6E400003-B5A3-F393-E0A9-E50E24DCCA9E`
 
-Die Befehlssyntax ist englisch und makrotauglich. Beispiele: `TEXT Door|open`, `SYMBOL OK`, `ARROW NE`, `CHX`, `I1`, `I0`, `SLEEP DISPLAY`, `SLEEP DEEP 60`, `SLEEP RESET` und `CL`.
+Die Befehlssyntax ist englisch und makrotauglich. Beispiele: `TEXT Door|open`, `SYMBOL OK`, `ESP STAR`, `ARROW NE`, `CHX`, `I1`, `I0`, `SLEEP DISPLAY`, `SLEEP DEEP 60`, `SLEEP RESET` und `CL`. Nach `CL` bleiben 2x2-Pixel-Markierungen in den Ecken sichtbar; Clients sollen danach kein `SLEEP DISPLAY` senden, wenn dieser Clear-Zustand sichtbar bleiben soll.
 
 ## Projektweite Libraries
 

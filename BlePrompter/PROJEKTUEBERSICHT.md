@@ -1,6 +1,6 @@
 ---
-Datum: 26.05.2026
-Version: 11
+Datum: 30.05.2026
+Version: 14
 Autor: Peter Heß, Germany (+Codex)
 ---
 
@@ -20,9 +20,13 @@ Die Firmware zeigt per BLE empfangene Befehle auf dem OLED an. Ziel ist eine ein
 | OLED SCL | GPIO6 | I2C-Taktleitung |
 | Button | GPIO9 | `INPUT_PULLUP`, gedrückt ist `LOW`; langer Druck aktiviert Tiefschlaf |
 
-## Startanzeige
+## Start und Schlafzyklus
 
-Nach dem Start zeigt das OLED kurz:
+Nach Bestromung oder Reset startet die Firmware den zyklischen Tiefschlafmodus mit einem ersten Wachfenster von `10 s`. Dadurch ist BLE direkt nach einem Reset kurz online, kann für einen Zwangs-Reconnect genutzt werden und erleichtert das Flashen. Danach läuft der Zyklus mit `30 s` Schlafdauer und `10 s` Wachfenster weiter.
+
+Bei Timer-Aufwachen aus dem zyklischen Tiefschlaf startet BLE für das Wachfenster. Nach jedem fünften Zyklus wird das Wachfenster auf `60 s` verlängert. Eine BLE-Verbindung pausiert den Zyklus für die Bedienung; nach der Trennung startet die Firmware den zyklischen Tiefschlaf wieder automatisch.
+
+Bei regulären Starts außerhalb des automatischen Power-On-Zyklus zeigt das OLED kurz:
 
 - `BlePrompter`
 - die Programmversion
@@ -55,7 +59,8 @@ Unterstützt werden:
 - 180-Grad-Darstellung für kopfüber montierte Displays mit `U1` und `U0`
 - Sleep-Modi mit `SLEEP DISPLAY`, `SLEEP DEEP <Sekunden>`, `SLEEP CYCLE [Schlafsekunden Listensekunden]`, `SLEEP RESET` und `WAKE`
 - Sleep-Button auf GPIO9: nach 5 Sekunden Halten zählt das OLED von `5` bis `0` und aktiviert zyklischen Tiefschlaf mit `30 s` Schlafdauer und `10 s` Wachfenster
-- Löschen der Anzeige mit `CLEAR`
+- Löschen der Anzeige mit `CLEAR`; der Clear-Zustand zeigt 2x2-Pixel-Markierungen in allen vier Ecken, damit aktives Display und Sleep unterscheidbar bleiben
+- Clients sollen nach `CLEAR`, `CLS` oder `CL` kein `SLEEP DISPLAY` senden, wenn die Eckenmarkierungen sichtbar bleiben sollen
 - kurze Hilfe mit `HELP`
 - kurze Makro-Aliasse wie `SA`, `SOK`, `EC`, `EW`, `AN`, `ASW`, `CHX`, `CJ1`, `I1`, `I0`, `U1`, `U0`, `CL` und `H`
 - Kartenbefehle nutzen englische Pokerbezeichnungen: `Heart`, `Diamond`, `Clubs`, `Spade`, `Ace`, `Jack`, `Queen`, `King` und `X` für 10.
@@ -64,11 +69,13 @@ Unterstützt werden:
 
 `SLEEP DISPLAY` schaltet das OLED und den I2C-Bus ab, lässt BLE aber aktiv. Der nächste BLE-Befehl weckt das Display ohne Reset und wird direkt ausgeführt.
 
+`SLEEP DISPLAY` entfernt auch die sichtbaren Clear-Markierungen. Ein Client, der den Clear-Zustand als Verbindungsindikator nutzen möchte, muss nach `CLEAR`, `CLS` oder `CL` verbunden bleiben und darf nicht direkt in Display-Sleep wechseln.
+
 `SLEEP DEEP <Sekunden>` schaltet das OLED ab und wechselt dann in den ESP32-Tiefschlaf mit Timer-Aufwachen. BLE trennt dabei, und die Firmware startet nach Ablauf der Zeit neu.
 
 `SLEEP CYCLE` schaltet das OLED ab und wechselt in einen zyklischen Tiefschlaf. Standard sind `30 s` Schlafdauer und `10 s` Wachfenster. Nach jedem fünften Zyklus wird das Wachfenster auf `60 s` verlängert. Während des Wachfensters zeigt das OLED `BlePrompter`, `Wachfenster`, die Restzeit und die Gerätekennung, zum Beispiel `BP-3F8A`.
 
-`WAKE` beendet den zyklischen Schlafmodus explizit. Eine erfolgreiche BLE-Verbindung beendet den zyklischen Schlafmodus ebenfalls, damit das Gerät aktiv bleibt.
+`WAKE` beendet den laufenden zyklischen Schlafmodus während einer aktiven Verbindung. Nach einer späteren BLE-Trennung startet die Firmware den zyklischen Tiefschlaf wieder automatisch, damit das Gerät nicht dauerhaft wach bleibt.
 
 `SLEEP RESET` schaltet das OLED ab und wechselt dann in den ESP32-Tiefschlaf ohne Timer. Das Gerät wacht erst durch Reset oder EN wieder auf.
 
