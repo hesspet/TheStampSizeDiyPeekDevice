@@ -1,6 +1,6 @@
 ---
 Datum: 26.05.2026
-Version: 9
+Version: 10
 Autor: Peter Heß, Germany (+Codex)
 ---
 
@@ -272,6 +272,24 @@ U0
 
 Die Einstellung ist für Displays gedacht, die kopfüber montiert sind. `U1` und `U0` zeichnen den aktuellen Bildinhalt nicht neu; die geänderte Ausrichtung wird erst beim nächsten Anzeige-Befehl sichtbar.
 
+## Cube
+
+```text
+CUBE 1
+CUBE 6
+```
+
+Alias:
+
+```text
+CUBES 1
+CUBES 6
+```
+
+Zeigt ein Würfelsymbol mit einem Wert von `1` bis `6` auf dem OLED an. Die Würfelaugen werden als gefüllte Kreise in der klassischen Würfelanordnung dargestellt. Die Darstellung unterstützt normale und invertierte Anzeige.
+
+Für Würfel gibt es keine Kurzbefehle, da `C` bereits für `CARD` reserviert ist.
+
 ## Sleep
 
 Nach Bestromung oder Reset startet das Gerät automatisch den zyklischen Schlafmodus mit einem ersten Wachfenster von `10 s`. Dadurch ist BLE direkt nach dem Reset kurz online. Danach läuft der Zyklus mit `30 s` Schlafdauer und `10 s` Wachfenster weiter. Eine BLE-Verbindung pausiert den Zyklus für die Bedienung; nach der Trennung wird der Zyklus automatisch wieder gestartet.
@@ -319,6 +337,7 @@ Für MacroDroid kann ein BLE-Plugin genutzt werden, das den Nordic UART Service 
 ```text
 TEXT Door|open
 ARROW NE
+CUBE 4
 SYMBOL OK
 ESP Circle
 EW
@@ -332,4 +351,4 @@ I0
 CL
 ```
 
-Für Makro-Buttons in Serial Bluetooth Terminal eignen sich dieselben Befehle.
+Für Makro-Buttons in Serial Bluetooth Terminal eignen sich dieselben Befehle.E

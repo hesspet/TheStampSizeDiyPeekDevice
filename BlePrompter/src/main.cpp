@@ -13,6 +13,7 @@
 
 #include <StampDisplay/ArrowDisplay.h>
 #include <StampDisplay/AsciiCharacterDisplay.h>
+#include <StampDisplay/DiceDisplay.h>
 #include <StampDisplay/EspSymbolDisplay.h>
 #include <StampDisplay/PlayingCardDisplay.h>
 
@@ -53,6 +54,7 @@ struct CycleSleepState
 U8G2_SSD1306_72X40_ER_F_HW_I2C display(U8G2_R0, U8X8_PIN_NONE);
 ArrowDisplay arrowDisplay;
 AsciiCharacterDisplay asciiCharacterDisplay;
+DiceDisplay diceDisplay;
 EspSymbolDisplay espSymbolDisplay;
 PlayingCardDisplay playingCardDisplay;
 
@@ -771,6 +773,47 @@ void drawPlayingCard(uint8_t cardIndex)
     idleScreenDrawn = true;
 }
 
+void drawDiceFace(uint8_t faceValue)
+{
+    display.clearBuffer();
+    diceDisplay.drawFace(display, faceValue, displayInverted);
+    display.sendBuffer();
+    idleScreenDrawn = true;
+}
+
+bool tryParseDiceValue(const std::string &text, uint8_t &faceValue)
+{
+    const std::string trimmedText = trimString(text);
+    if (trimmedText.empty())
+    {
+        return false;
+    }
+
+    for (size_t characterIndex = 0; characterIndex < trimmedText.length(); characterIndex++)
+    {
+        if (!isdigit(static_cast<unsigned char>(trimmedText[characterIndex])))
+        {
+            return false;
+        }
+    }
+
+    errno = 0;
+    char *endPointer = nullptr;
+    const long parsedValue = strtol(trimmedText.c_str(), &endPointer, 10);
+    if (errno == ERANGE || endPointer == trimmedText.c_str() || *endPointer != '\0')
+    {
+        return false;
+    }
+
+    if (parsedValue < 1 || parsedValue > DiceDisplay::faceCount)
+    {
+        return false;
+    }
+
+    faceValue = static_cast<uint8_t>(parsedValue);
+    return true;
+}
+
 void drawEspSymbol(EspSymbol espSymbol)
 {
     display.clearBuffer();
@@ -1131,7 +1174,7 @@ bool tryParseCycleSleepArguments(
 
 void sendHelp()
 {
-    sendResponse("Befehle: TEXT, S*, E*, A*, CHX, CJ1, I1, I0, U1, U0, SLEEP, WAKE, CL, H");
+    sendResponse("Befehle: TEXT, S*, E*, A*, CUBE, CHX, CJ1, I1, I0, U1, U0, SLEEP, WAKE, CL, H");
 }
 
 void processCommand(const char *rawCommand)
@@ -1273,6 +1316,20 @@ void processCommand(const char *rawCommand)
         }
 
         drawEspSymbol(espSymbol);
+        sendCommandStatus(command, true);
+        return;
+    }
+
+    if (commandName == "CUBE" || commandName == "CUBES")
+    {
+        uint8_t faceValue = 0;
+        if (!tryParseDiceValue(argument, faceValue))
+        {
+            sendCommandStatus(command, false);
+            return;
+        }
+
+        drawDiceFace(faceValue);
         sendCommandStatus(command, true);
         return;
     }

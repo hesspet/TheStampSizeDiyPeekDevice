@@ -1,6 +1,6 @@
 ---
-Datum: 22.05.2026
-Version: 8
+Datum: 01.06.2026
+Version: 9
 Autor: Peter Heß, Germany (+Codex)
 ---
 # BoardTest
@@ -16,6 +16,7 @@ Die Firmware prüft die zentralen Board-Funktionen:
 - Startanzeige mit Programmname, Programmversion und Builddatum im Format `DD.MM.YYYY`.
 - Button-Auswertung auf GPIO9 mit internem Pull-up.
 - Selbst gezeichnete große Pfeile für die Kompassrichtungen `N`, `NO`, `O`, `SO`, `S`, `SW`, `W` und `NW`.
+- Selbst gezeichnete große Würfelsymbole für die Werte `1` bis `6`.
 - Anzeige von ein oder zwei ASCII-Zeichen über eine eigene Hilfsklasse.
 - Anzeige der ESP-Symbole Kreis, Kreuz, Wellen, Quadrat und Stern über die gemeinsame Display-Library.
 - Anzeige eines vollständigen Pokerdecks mit 52 Karten plus 2 Joker.
@@ -45,6 +46,7 @@ Die Header werden über den Library-Präfix eingebunden:
 #include <StampDisplay/ArrowDisplay.h>
 #include <StampDisplay/AsciiCharacterDisplay.h>
 #include <StampDisplay/EspSymbolDisplay.h>
+#include <StampDisplay/DiceDisplay.h>
 #include <StampDisplay/PlayingCardDisplay.h>
 ```
 
@@ -91,7 +93,7 @@ Die ESP-Symbolanzeige liegt in `../lib/StampDisplay/include/StampDisplay/EspSymb
 - Jeder weitere Druck auf GPIO9 schaltet zur nächsten Symbolreihe.
 - Jede Anzeige bleibt `1000 ms` sichtbar, danach folgt die nächste Anzeige derselben Reihe.
 - Die aktuelle Symbolreihe läuft so lange weiter, bis erneut GPIO9 gedrückt wird.
-- Die Reihen sind: Pfeile, Spielkarten, Zähler `1` bis `12`, ASCII-Einzelzeichen, ASCII-Zeichenpaare, ESP-Symbole sowie dieselben Reihen invertiert.
+- Die Reihen sind: Würfel, Pfeile, Spielkarten, Zähler `1` bis `12`, ASCII-Einzelzeichen, ASCII-Zeichenpaare, ESP-Symbole sowie alle Reihen invertiert.
 
 ## Hardwarebelegung
 

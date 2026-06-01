@@ -11,7 +11,7 @@ enum class DebugLevel : uint8_t
 };
 
 constexpr const char *programName = "BlePrompter";
-constexpr const char *programVersion = "1.5.3";
+constexpr const char *programVersion = "1.6.0";
 constexpr const char *bluetoothDeviceName = "BlePrompter";
 constexpr DebugLevel configuredDebugLevel = DebugLevel::info;
 

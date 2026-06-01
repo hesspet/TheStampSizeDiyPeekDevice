@@ -7,6 +7,7 @@
 
 #include <StampDisplay/ArrowDisplay.h>
 #include <StampDisplay/AsciiCharacterDisplay.h>
+#include <StampDisplay/DiceDisplay.h>
 #include <StampDisplay/EspSymbolDisplay.h>
 #include <StampDisplay/PlayingCardDisplay.h>
 
@@ -15,6 +16,7 @@
 U8G2_SSD1306_72X40_ER_F_HW_I2C display(U8G2_R0, U8X8_PIN_NONE);
 ArrowDisplay arrowDisplay;
 AsciiCharacterDisplay asciiCharacterDisplay;
+DiceDisplay diceDisplay;
 EspSymbolDisplay espSymbolDisplay;
 PlayingCardDisplay playingCardDisplay;
 
@@ -27,6 +29,7 @@ struct ButtonState
 
 enum class TestDisplayKind : uint8_t
 {
+    dice,
     arrow,
     card,
     counter,
@@ -37,6 +40,8 @@ enum class TestDisplayKind : uint8_t
 
 enum class TestDisplaySeries : uint8_t
 {
+    dices,
+    invertedDices,
     arrows,
     cards,
     counters,
@@ -65,6 +70,7 @@ char currentAsciiSecondCharacter = '\0';
 CompassDirection currentArrowDirection = CompassDirection::N;
 EspSymbol currentEspSymbol = EspSymbol::circle;
 TestDisplayKind currentDisplayKind = TestDisplayKind::arrow;
+uint8_t currentDiceValue = 1;
 TestDisplaySeries currentDisplaySeries = TestDisplaySeries::arrows;
 
 constexpr CompassDirection arrowDirections[ArrowDisplay::directionCount] = {
@@ -86,11 +92,16 @@ constexpr EspSymbol espSymbols[EspSymbolDisplay::symbolCount] = {
     EspSymbol::star
 };
 
+constexpr uint8_t diceValues[DiceDisplay::faceCount] = {
+    1, 2, 3, 4, 5, 6
+};
+
+constexpr uint8_t diceDisplayCount = DiceDisplay::faceCount;
 constexpr uint8_t randomCardDisplayCount = 16;
 constexpr uint8_t counterDisplayCount = 12;
 constexpr uint8_t randomSingleAsciiDisplayCount = 10;
 constexpr uint8_t randomPairAsciiDisplayCount = 10;
-constexpr uint8_t testDisplaySeriesCount = 12;
+constexpr uint8_t testDisplaySeriesCount = 14;
 
 const char *getDebugLevelName(DebugLevel debugLevel)
 {
@@ -268,6 +279,10 @@ void writeCurrentTestStepDescription()
 
     switch (currentDisplayKind)
     {
+        case TestDisplayKind::dice:
+            writeTextToOutputs("Würfel ");
+            Serial.println(currentDiceValue);
+            break;
         case TestDisplayKind::arrow:
             writeLineToOutputs(arrowDisplay.getDirectionDescription(currentArrowDirection));
             break;
@@ -301,6 +316,10 @@ const char *getCurrentTestDisplaySeriesDescription()
 {
     switch (currentDisplaySeries)
     {
+        case TestDisplaySeries::dices:
+            return "Würfel";
+        case TestDisplaySeries::invertedDices:
+            return "Würfel invertiert";
         case TestDisplaySeries::arrows:
             return "Pfeile";
         case TestDisplaySeries::cards:
@@ -334,6 +353,9 @@ uint8_t getCurrentTestDisplaySeriesStepCount()
 {
     switch (currentDisplaySeries)
     {
+        case TestDisplaySeries::dices:
+        case TestDisplaySeries::invertedDices:
+            return diceDisplayCount;
         case TestDisplaySeries::arrows:
         case TestDisplaySeries::invertedArrows:
             return ArrowDisplay::directionCount;
@@ -366,7 +388,8 @@ void writeCurrentTestDisplaySeriesDescription()
 void prepareTestStep(uint8_t testStepIndex)
 {
     currentTestStepInverted =
-        currentDisplaySeries == TestDisplaySeries::invertedArrows
+        currentDisplaySeries == TestDisplaySeries::invertedDices
+        || currentDisplaySeries == TestDisplaySeries::invertedArrows
         || currentDisplaySeries == TestDisplaySeries::invertedCards
         || currentDisplaySeries == TestDisplaySeries::invertedCounters
         || currentDisplaySeries == TestDisplaySeries::invertedAsciiSingles
@@ -375,6 +398,11 @@ void prepareTestStep(uint8_t testStepIndex)
 
     switch (currentDisplaySeries)
     {
+        case TestDisplaySeries::dices:
+        case TestDisplaySeries::invertedDices:
+            currentDisplayKind = TestDisplayKind::dice;
+            currentDiceValue = diceValues[testStepIndex % diceDisplayCount];
+            break;
         case TestDisplaySeries::arrows:
         case TestDisplaySeries::invertedArrows:
             currentDisplayKind = TestDisplayKind::arrow;
@@ -418,6 +446,9 @@ void drawCurrentTestStep()
 
     switch (currentDisplayKind)
     {
+        case TestDisplayKind::dice:
+            diceDisplay.drawFace(display, currentDiceValue, currentTestStepInverted);
+            break;
         case TestDisplayKind::arrow:
             arrowDisplay.drawArrow(display, currentArrowDirection, currentTestStepInverted);
             break;
@@ -479,7 +510,7 @@ void startTestMode(unsigned long currentMillis)
     testModeRunning = true;
     idleScreenDrawn = false;
     currentTestStepIndex = 0;
-    currentDisplaySeries = TestDisplaySeries::arrows;
+    currentDisplaySeries = TestDisplaySeries::dices;
     writeDebugMessage(DebugLevel::info, "Testmodus gestartet");
     writeCurrentTestDisplaySeriesDescription();
     showCurrentTestStep(currentMillis);

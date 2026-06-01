@@ -1,6 +1,6 @@
 ---
-Datum: 30.05.2026
-Version: 14
+Datum: 01.06.2026
+Version: 15
 Autor: Peter Heß, Germany (+Codex)
 ---
 
@@ -55,6 +55,7 @@ Unterstützt werden:
 - ESP-Symbole mit `ESP` und Kurzbefehlen `EC`, `EG`, `EW`, `EQ`, `ES`
 - Pfeile mit `ARROW`
 - Spielkarten mit `CARD`
+- Würfelsymbole mit `CUBE` und `CUBES`
 - invertierte Darstellung mit `INVERT`
 - 180-Grad-Darstellung für kopfüber montierte Displays mit `U1` und `U0`
 - Sleep-Modi mit `SLEEP DISPLAY`, `SLEEP DEEP <Sekunden>`, `SLEEP CYCLE [Schlafsekunden Listensekunden]`, `SLEEP RESET` und `WAKE`
@@ -88,6 +89,7 @@ GPIO9 dient zusätzlich als Sleep-Button. Wird der Button länger als 5 Sekunden
 - Pfeile
 - Symbole
 - ESP-Symbole
+- Würfelsymbole
 - Spielkarten
 
 ## Debug und Konfiguration

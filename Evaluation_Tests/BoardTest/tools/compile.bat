@@ -6,27 +6,21 @@ call "%TOOLS_DIRECTORY%env.bat"
 
 set "PROJECT_DIRECTORY=%TOOLS_DIRECTORY%.."
 
-if "%BLEPROMPTER_UPLOAD_PORT%"=="" (
-    echo Fehler: BLEPROMPTER_UPLOAD_PORT ist in env.bat nicht gesetzt.
-    set "EXIT_STATUS=1"
-    goto finishWithStatus
-)
-
-echo Flashe BlePrompter auf %BLEPROMPTER_UPLOAD_PORT%...
+echo Kompiliere BoardTest...
 pushd "%PROJECT_DIRECTORY%" || (
     set "EXIT_STATUS=1"
     goto finishWithStatus
 )
-"%PLATFORMIO_EXECUTABLE%" run --target upload --upload-port "%BLEPROMPTER_UPLOAD_PORT%"
+"%PLATFORMIO_EXECUTABLE%" run
 set "EXIT_STATUS=%ERRORLEVEL%"
 popd
 
 if not "%EXIT_STATUS%"=="0" (
-    echo Flashen fehlgeschlagen.
+    echo Kompilieren fehlgeschlagen.
     goto finishWithStatus
 )
 
-echo Flashen abgeschlossen.
+echo Kompilieren abgeschlossen.
 set "EXIT_STATUS=0"
 goto finishWithStatus
 
