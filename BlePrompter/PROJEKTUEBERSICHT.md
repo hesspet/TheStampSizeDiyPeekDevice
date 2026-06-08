@@ -1,131 +1,158 @@
 ---
 Datum: 01.06.2026
-Version: 15
+Version: 16
 Autor: Peter Heß, Germany (+Codex)
 ---
 
 # BlePrompter
 
-`BlePrompter` ist eine ESP32-C3-Test-Firmware für das 0,42-Zoll-OLED-Entwicklungsboard aus `../docs/ESP32-C3 -OLED-Entwicklungsboard.description.md`.
+`BlePrompter` ist eine BLE-UART-Firmware für ESP32-Boards. Sie zeigt per BLE empfangene Befehle auf einem Display an. Ziel ist eine einfache externe Steuerung ohne eigene native Smartphone-App. Geeignete Werkzeuge sind Android-Apps wie nRF Connect, Serial Bluetooth Terminal, MacroDroid mit BLE-Plugin und andere BLE-UART-fähige Werkzeuge.
 
-## Zweck
+## Unterstützte Boards
 
-Die Firmware zeigt per BLE empfangene Befehle auf dem OLED an. Ziel ist eine einfache externe Steuerung ohne eigene native Smartphone-App. Geeignete Werkzeuge sind Android-Apps wie nRF Connect, Serial Bluetooth Terminal, MacroDroid mit BLE-Plugin und andere BLE-UART-fähige Werkzeuge.
+| Board | Display | Auflösung | Build-Umgebung |
+| --- | --- | --- | --- |
+| ESP32-C3 OLED | SSD1306 (I2C, monochrom) | 72 × 40 | `[env:esp32c3]` |
+| CYB/CYD | ILI9341 (SPI, Farbe) | 320 × 240 | `[env:cyd]` |
+
+## Architektur
+
+Die Display-Logik ist in mehrere Schichten gekapselt:
+
+```
+main.cpp (BLE, Befehle, Sleep-Zyklen)
+    ↓
+DisplayController (Zeichenfunktionen: drawStartupScreen, drawPromptText, …)
+    ↓
+DisplayHardware (abstrakte Hardware-Schnittstelle)
+    ├── Ssd1306Hardware (OLED, U8g2, I2C)
+    └── Ili9341Hardware  (TFT, TFT_eSPI, SPI)
+```
+
+**OLED-Pfad:** `DisplayController` → `Ssd1306Hardware` → `U8g2` + `StampDisplay`-Bibliothek (Pfeile, Karten, Würfel, ESP-Symbole)
+
+**CYB-Pfad:** `DisplayController` → `Ili9341Hardware` → `TFT_eSPI` + `CydDisplay`-Modul (gleiche Symbole, TFT-gerecht skaliert)
+
+### Dateiübersicht
+
+**Display-Schicht (`src/display/`, `include/display/`):**
+
+| Datei | Zweck |
+| --- | --- |
+| `DisplayHardware.h` | Abstrakte Basisklasse für Display-Hardware |
+| `Ssd1306Hardware.h/.cpp` | SSD1306-OLED-Treiber (ESP32-C3) |
+| `Ili9341Hardware.h/.cpp` | ILI9341-TFT-Treiber (CYB/CYD) |
+| `DisplayController.h/.cpp` | Gekapselte Zeichenlogik (board-unabhängig) |
+| `CydDisplay.h/.cpp` | Symbol-Zeichenfunktionen für CYB (Pfeile, Karten etc.) |
+
+**Board-Konfiguration:**
+
+| Datei | Zweck |
+| --- | --- |
+| `include/config.h` | Gemeinsame + board-spezifische Konfiguration |
+| `include/TFT_eSPI_Setup_CYD.h` | TFT_eSPI-Pin-Belegung für CYB |
+| `platformio.ini` | Build-Umgebungen `esp32c3` und `cyd` |
 
 ## Hardwarebelegung
+
+### ESP32-C3 OLED
 
 | Funktion | GPIO | Hinweis |
 | --- | --- | --- |
 | OLED SDA | GPIO5 | I2C-Datenleitung |
 | OLED SCL | GPIO6 | I2C-Taktleitung |
-| Button | GPIO9 | `INPUT_PULLUP`, gedrückt ist `LOW`; langer Druck aktiviert Tiefschlaf |
+| Button | GPIO9 | `INPUT_PULLUP`, gedrückt ist `LOW` |
+
+### CYB/CYD
+
+| Funktion | GPIO | Hinweis |
+| --- | --- | --- |
+| TFT MOSI | GPIO13 | SPI-Daten |
+| TFT MISO | GPIO12 | SPI-Daten |
+| TFT SCLK | GPIO14 | SPI-Takt |
+| TFT CS | GPIO15 | SPI-Chip-Select |
+| TFT DC | GPIO2 | Data/Command |
+| TFT RST | -1 | nicht verbunden |
+| Backlight | GPIO27 | `HIGH` = ein |
+| Button | GPIO0 | BOOT-Button |
 
 ## Start und Schlafzyklus
 
-Nach Bestromung oder Reset startet die Firmware den zyklischen Tiefschlafmodus mit einem ersten Wachfenster von `10 s`. Dadurch ist BLE direkt nach einem Reset kurz online, kann für einen Zwangs-Reconnect genutzt werden und erleichtert das Flashen. Danach läuft der Zyklus mit `30 s` Schlafdauer und `10 s` Wachfenster weiter.
+### ESP32-C3 OLED
 
-Bei Timer-Aufwachen aus dem zyklischen Tiefschlaf startet BLE für das Wachfenster. Nach jedem fünften Zyklus wird das Wachfenster auf `60 s` verlängert. Eine BLE-Verbindung pausiert den Zyklus für die Bedienung; nach der Trennung startet die Firmware den zyklischen Tiefschlaf wieder automatisch.
+Nach Bestromung oder Reset startet die Firmware den zyklischen Tiefschlafmodus mit einem ersten Wachfenster von `10 s`. Danach läuft der Zyklus mit `30 s` Schlafdauer und `10 s` Wachfenster weiter.
 
-Bei regulären Starts außerhalb des automatischen Power-On-Zyklus zeigt das OLED kurz:
+Bei Timer-Aufwachen startet BLE für das Wachfenster. Nach jedem fünften Zyklus wird das Wachfenster auf `60 s` verlängert. Eine BLE-Verbindung pausiert den Zyklus.
 
-- `BlePrompter`
-- die Programmversion
-- `Build:`
-- das Builddatum im Format `DD.MM.YYYY`
+Bei regulären Starts zeigt das OLED kurz Programmname, Version und Builddatum, dann den BLE-Bereitschaftsstatus.
 
-Danach zeigt das OLED den BLE-Bereitschaftsstatus.
+### CYB/CYD
 
-## BLE
+Das CYD-Board startet ohne zyklischen Tiefschlaf. Nach dem Einschalten zeigt das TFT den Startbildschirm und danach den BLE-Bereitschaftsstatus. BLE-Sleep-Befehle (`SLEEP DISPLAY`, `SLEEP DEEP`, etc.) funktionieren wie auf dem OLED, deaktivieren aber statt des OLED das TFT-Backlight.
+
+## BLE (beide Boards identisch)
 
 - Bluetooth-Name: `BlePrompter-xxxx`, wobei `xxxx` aus der ESP32-Chip-ID abgeleitet wird
 - Protokoll: BLE-UART kompatibel zum Nordic UART Service
 - Service-UUID: `6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
-- RX-Characteristic zum Schreiben: `6E400002-B5A3-F393-E0A9-E50E24DCCA9E`
-- TX-Characteristic für Antworten: `6E400003-B5A3-F393-E0A9-E50E24DCCA9E`
-- Pairing: einfaches BLE-Bonding ohne Passkey.
+- RX-Characteristic: `6E400002-B5A3-F393-E0A9-E50E24DCCA9E`
+- TX-Characteristic: `6E400003-B5A3-F393-E0A9-E50E24DCCA9E`
+- Pairing: einfaches BLE-Bonding ohne Passkey
 
-## Befehle
+## Befehle (beide Boards identisch)
 
 Die Befehlsdokumentation liegt in `./BEFEHLE.md`.
 
-Unterstützt werden:
+Unterstützt werden: `TEXT`, `SYMBOL`, `ESP`, `ARROW`, `CARD`, `CUBE`, `INVERT`, `U1`, `U0`, `CLEAR`, `SLEEP`, `WAKE`, `HELP` sowie Kurz-Aliasse.
 
-- Textanzeige mit `TEXT`
-- große Symbolanzeige mit `SYMBOL`
-- ESP-Symbole mit `ESP` und Kurzbefehlen `EC`, `EG`, `EW`, `EQ`, `ES`
-- Pfeile mit `ARROW`
-- Spielkarten mit `CARD`
-- Würfelsymbole mit `CUBE` und `CUBES`
-- invertierte Darstellung mit `INVERT`
-- 180-Grad-Darstellung für kopfüber montierte Displays mit `U1` und `U0`
-- Sleep-Modi mit `SLEEP DISPLAY`, `SLEEP DEEP <Sekunden>`, `SLEEP CYCLE [Schlafsekunden Listensekunden]`, `SLEEP RESET` und `WAKE`
-- Sleep-Button auf GPIO9: nach 5 Sekunden Halten zählt das OLED von `5` bis `0` und aktiviert zyklischen Tiefschlaf mit `30 s` Schlafdauer und `10 s` Wachfenster
-- Löschen der Anzeige mit `CLEAR`; der Clear-Zustand zeigt 2x2-Pixel-Markierungen in allen vier Ecken, damit aktives Display und Sleep unterscheidbar bleiben
-- Clients sollen nach `CLEAR`, `CLS` oder `CL` kein `SLEEP DISPLAY` senden, wenn die Eckenmarkierungen sichtbar bleiben sollen
-- kurze Hilfe mit `HELP`
-- kurze Makro-Aliasse wie `SA`, `SOK`, `EC`, `EW`, `AN`, `ASW`, `CHX`, `CJ1`, `I1`, `I0`, `U1`, `U0`, `CL` und `H`
-- Kartenbefehle nutzen englische Pokerbezeichnungen: `Heart`, `Diamond`, `Clubs`, `Spade`, `Ace`, `Jack`, `Queen`, `King` und `X` für 10.
+## Display-Bibliotheken
 
-## Sleep-Modi
+**OLED-Pfad:** Nutzt `../lib/StampDisplay` für Pfeile, Symbole, ESP-Symbole, Würfel und Spielkarten.
 
-`SLEEP DISPLAY` schaltet das OLED und den I2C-Bus ab, lässt BLE aber aktiv. Der nächste BLE-Befehl weckt das Display ohne Reset und wird direkt ausgeführt.
-
-`SLEEP DISPLAY` entfernt auch die sichtbaren Clear-Markierungen. Ein Client, der den Clear-Zustand als Verbindungsindikator nutzen möchte, muss nach `CLEAR`, `CLS` oder `CL` verbunden bleiben und darf nicht direkt in Display-Sleep wechseln.
-
-`SLEEP DEEP <Sekunden>` schaltet das OLED ab und wechselt dann in den ESP32-Tiefschlaf mit Timer-Aufwachen. BLE trennt dabei, und die Firmware startet nach Ablauf der Zeit neu.
-
-`SLEEP CYCLE` schaltet das OLED ab und wechselt in einen zyklischen Tiefschlaf. Standard sind `30 s` Schlafdauer und `10 s` Wachfenster. Nach jedem fünften Zyklus wird das Wachfenster auf `60 s` verlängert. Während des Wachfensters zeigt das OLED `BlePrompter`, `Wachfenster`, die Restzeit und die Gerätekennung, zum Beispiel `BP-3F8A`.
-
-`WAKE` beendet den laufenden zyklischen Schlafmodus während einer aktiven Verbindung. Nach einer späteren BLE-Trennung startet die Firmware den zyklischen Tiefschlaf wieder automatisch, damit das Gerät nicht dauerhaft wach bleibt.
-
-`SLEEP RESET` schaltet das OLED ab und wechselt dann in den ESP32-Tiefschlaf ohne Timer. Das Gerät wacht erst durch Reset oder EN wieder auf.
-
-GPIO9 dient zusätzlich als Sleep-Button. Wird der Button länger als 5 Sekunden gehalten, zeigt das OLED `Zykl. Schlaf` und einen Countdown von `5` bis `0`. Wird der Button vorher losgelassen, wird der vorherige OLED-Zustand wiederhergestellt. Nach Ablauf des Countdowns wird zyklischer Tiefschlaf aktiviert; das OLED wird direkt vor dem Tiefschlaf deaktiviert. `SLEEP RESET` bleibt als expliziter Befehl für Reset/EN-Aufwachen erhalten.
-
-## Display-Bibliothek
-
-`BlePrompter` nutzt die gemeinsame Projektbibliothek `../lib/StampDisplay` für:
-
-- Pfeile
-- Symbole
-- ESP-Symbole
-- Würfelsymbole
-- Spielkarten
+**CYB-Pfad:** Nutzt das eingebaute `CydDisplay`-Modul für die gleichen Symbole, skaliert auf das größere Farbdisplay.
 
 ## Debug und Konfiguration
 
 Die Konfiguration liegt in `include/config.h`.
 
-Der Debuglevel ist über `configuredDebugLevel` schaltbar:
+Der Debuglevel ist über `configuredDebugLevel` schaltbar: `none`, `info`, `debug`, `trace`. Auch bei `none` wird ein Programmheader ausgegeben.
 
-- `DebugLevel::none`
-- `DebugLevel::info`
-- `DebugLevel::debug`
-- `DebugLevel::trace`
+## PlatformIO — Build und Upload
 
-Auch bei `DebugLevel::none` wird beim Start ein kurzer Programmheader ausgegeben. Debugausgaben gehen über USB-Serial.
-
-## PlatformIO
-
-Build:
+### ESP32-C3 OLED (Standard)
 
 ```powershell
-cd BlePrompter
-pio run
-```
-
-Upload:
-
-```powershell
-cd BlePrompter
-pio run --target upload
-```
-
-Monitor:
-
-```powershell
-cd BlePrompter
+cd C:\dev\TheStampSizeDiyPeekDevice\BlePrompter
+pio run -e esp32c3
+pio run -e esp32c3 --target upload
 pio device monitor --port COM6 --baud 115200
 ```
 
-Für das aktuell angeschlossene Board ist `COM6` konfiguriert. `ARDUINO_USB_MODE=1` mit `ARDUINO_USB_CDC_ON_BOOT=1` nutzt die ESP32-C3-Hardware-USB-CDC/JTAG-Schnittstelle.
+### CYB/CYD
+
+```powershell
+cd C:\dev\TheStampSizeDiyPeekDevice\BlePrompter
+pio run -e cyd
+pio run -e cyd --target upload
+pio device monitor --port COM11 --baud 115200
+```
+
+**Wichtig vor dem ersten CYD-Build:** `pio run -e cyd --target clean` ausführen, damit die TFT_eSPI-Library mit der neuen Konfiguration neu gebaut wird.
+
+### Board wechseln
+
+Um zwischen den Boards zu wechseln, die gewünschte Umgebung mit `-e <env>` angeben:
+
+- `-e esp32c3` für das ESP32-C3-OLED-Board (Standard, `COM6`)
+- `-e cyd` für das CYB/CYD-Board (`COM11`)
+
+Bei COM-Port-Änderungen die `upload_port` und `monitor_port` in `platformio.ini` anpassen.
+
+## Neues Board hinzufügen
+
+1. `DisplayHardware`-Unterklasse in `include/display/` und `src/display/` erstellen
+2. Board-spezifische Konfiguration in `include/config.h` unter `#ifdef BOARD_XXX` ergänzen
+3. `platformio.ini`: Neue `[env:xxx]`-Sektion mit `-D BOARD_XXX` in `build_flags`
+4. Bei neuen Display-Typen: Symbol-Zeichenmodul analog zu `CydDisplay` erstellen
+5. `DisplayController` um `#ifdef BOARD_XXX`-Blöcke erweitern
+6. Diese Dokumentation aktualisieren

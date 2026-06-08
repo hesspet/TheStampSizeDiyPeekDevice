@@ -4,3 +4,5 @@
 .vscode/launch.json
 .vscode/ipch
 .vscode
+tools/.active_env
+tools/.com_ports

@@ -1,17 +1,41 @@
 @echo off
-setlocal
+setlocal enabledelayedexpansion
 
 set "TOOLS_DIRECTORY=%~dp0"
-call "%TOOLS_DIRECTORY%env.bat"
-
 set "PROJECT_DIRECTORY=%TOOLS_DIRECTORY%.."
+set "PLATFORMIO_EXECUTABLE=%APPDATA%\Python\Python313\Scripts\pio.exe"
+set "ACTIVE_ENV_FILE=%TOOLS_DIRECTORY%active_env"
+
+:: Aktive Umgebung laden
+set "ACTIVE_ENV="
+if exist "%ACTIVE_ENV_FILE%" (
+    set /p ACTIVE_ENV=<"%ACTIVE_ENV_FILE%"
+)
+
+:: PIO-Kommando ermitteln
+set "PIO_CMD="
+if exist "%PLATFORMIO_EXECUTABLE%" (
+    set "PIO_CMD=%PLATFORMIO_EXECUTABLE%"
+) else (
+    set "PIO_CMD=pio"
+)
 
 echo Kompiliere BlePrompter...
 pushd "%PROJECT_DIRECTORY%" || (
     set "EXIT_STATUS=1"
     goto finishWithStatus
 )
-"%PLATFORMIO_EXECUTABLE%" run
+
+if defined ACTIVE_ENV (
+    echo Umgebung: %ACTIVE_ENV%
+    %PIO_CMD% run -e %ACTIVE_ENV%
+) else (
+    echo Keine Umgebung ausgewaehlt. Bitte zuerst env.bat ausfuehren.
+    echo.
+    echo Alternativ: Default-Umgebung wird verwendet.
+    %PIO_CMD% run
+)
+
 set "EXIT_STATUS=%ERRORLEVEL%"
 popd
 
