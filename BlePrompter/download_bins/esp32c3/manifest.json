@@ -1,0 +1,14 @@
+﻿{
+    "name":  "BlePrompter ESP32-C3 OLED 1.8.1",
+    "builds":  [
+                   {
+                       "chipFamily":  "ESP32-C3",
+                       "parts":  [
+                                     {
+                                         "path":  "BlePrompter-esp32c3-v1.8.1-20260608-115204-download.bin",
+                                         "offset":  0
+                                     }
+                                 ]
+                   }
+               ]
+}

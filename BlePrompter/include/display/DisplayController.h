@@ -18,7 +18,7 @@ public:
     void begin();
 
     // --- Bildschirmseiten ---
-    void drawStartupScreen(const char *programName, const char *programVersion, const char *buildDate);
+    void drawStartupScreen(const char *programName, const char *programVersion);
     void drawIdleScreen(bool bluetoothConnected, const char *deviceIdentifier);
     void clearDisplay();
 
@@ -36,6 +36,7 @@ public:
     void drawSleepStatus(const char *firstLine, const char *secondLine);
     void drawCycleListenWindowStatus(
         const char *programName,
+        const char *programVersion,
         const char *deviceIdentifier,
         uint32_t remainingSeconds);
     void drawDeepSleepCountdown(uint8_t secondsRemaining);

@@ -16,15 +16,20 @@
 #
 # Ergebnisformat
 # --------------
-# Für jede PlatformIO-Umgebung entsteht im Verzeichnis download_bins:
+# Für jede PlatformIO-Umgebung entsteht im Verzeichnis download_bins ein eigenes
+# Unterverzeichnis:
 #
-#   BlePrompter-<umgebung>-v<version>-<zeitstempel>-download.bin
-#   BlePrompter-<umgebung>-v<version>-<zeitstempel>-download.md
+#   <umgebung>/
+#     BlePrompter-<umgebung>-v<version>-<zeitstempel>-download.bin
+#     BlePrompter-<umgebung>-v<version>-<zeitstempel>-download.md
+#     manifest.json
 #
 # Die .bin-Datei ist ein zusammengeführtes Flash-Image. Sie enthält Bootloader,
 # Partitionstabelle, boot_app0.bin und die eigentliche Anwendungsfirmware an den
 # korrekten ESP-Flash-Adressen. Dadurch kann sie im Zauberhaft-Projekt direkt als
 # einzelner ESP-Web-Tools-Manifest-Part mit Offset 0 bereitgestellt werden.
+#
+# Die manifest.json verweist relativ auf die .bin-Datei im selben Ordner.
 #
 # Die .md-Datei enthält bewusst nur technische Buildinformationen und Platzhalter
 # für spätere Releasenotes und Installationshinweise.
@@ -228,6 +233,7 @@ function New-BuildInformationMarkdown {
         "- **Flash-Frequenz:** $($BuildConfiguration.FlashFrequency)",
         "- **Flash-Größe:** $($BuildConfiguration.FlashSize)",
         "- **Firmware-Datei:** $OutputBaseName.bin",
+        "- **Manifest-Datei:** manifest.json",
         "- **SHA256:** $OutputHash",
         "",
         "## Flash-Format",
@@ -258,6 +264,47 @@ function New-BuildInformationMarkdown {
     )
 
     Set-Content -LiteralPath $OutputMarkdownFile -Value $markdownLines -Encoding UTF8
+}
+
+function New-EspWebToolsManifest {
+    param(
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$BuildConfiguration,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ProgramName,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ProgramVersion,
+
+        [Parameter(Mandatory = $true)]
+        [string]$FirmwareFileName,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ManifestFile
+    )
+
+    # ESP Web Tools lädt zuerst diese Datei. Liegt die manifest.json im selben
+    # Verzeichnis wie die Firmware, genügt ein relativer Dateiname als path.
+    # Damit ist das Paket unabhängig davon, ob es lokal, unter GitHub Pages mit
+    # baseurl oder in einem anderen statischen Hostingpfad liegt.
+    $manifest = [ordered]@{
+        name = "$ProgramName $($BuildConfiguration.DisplayName) $ProgramVersion"
+        builds = @(
+            [ordered]@{
+                chipFamily = $BuildConfiguration.ChipFamily
+                parts = @(
+                    [ordered]@{
+                        path = $FirmwareFileName
+                        offset = 0
+                    }
+                )
+            }
+        )
+    }
+
+    $manifestJson = $manifest | ConvertTo-Json -Depth 8
+    Set-Content -LiteralPath $ManifestFile -Value $manifestJson -Encoding UTF8
 }
 
 function Build-AndBundleFirmware {
@@ -293,9 +340,13 @@ function Build-AndBundleFirmware {
     # überschreiben. Für die Bereitstellung im Zauberhaft-Projekt kann eine Datei
     # später gezielt in firmware.bin umbenannt oder im Manifest direkt referenziert
     # werden.
+    $environmentOutputDirectory = Join-Path $outputDirectory $BuildConfiguration.EnvironmentName
     $outputBaseName = "$ProgramName-$($BuildConfiguration.EnvironmentName)-v$ProgramVersion-$FileTimestamp-download"
-    $outputFirmwareFile = Join-Path $outputDirectory "$outputBaseName.bin"
-    $outputMarkdownFile = Join-Path $outputDirectory "$outputBaseName.md"
+    $outputFirmwareFileName = "$outputBaseName.bin"
+    $outputMarkdownFileName = "$outputBaseName.md"
+    $outputFirmwareFile = Join-Path $environmentOutputDirectory $outputFirmwareFileName
+    $outputMarkdownFile = Join-Path $environmentOutputDirectory $outputMarkdownFileName
+    $outputManifestFile = Join-Path $environmentOutputDirectory "manifest.json"
 
     Write-Host ""
     Write-Host "------------------------------------------------------------"
@@ -315,6 +366,12 @@ function Build-AndBundleFirmware {
     Assert-RequiredFile -Path $bootloaderFile -Description "Bootloader"
     Assert-RequiredFile -Path $partitionsFile -Description "Partitionstabelle"
     Assert-RequiredFile -Path $applicationFirmwareFile -Description "Anwendungsfirmware"
+
+    if (Test-Path -LiteralPath $environmentOutputDirectory) {
+        Get-ChildItem -LiteralPath $environmentOutputDirectory -Force | Remove-Item -Recurse -Force
+    } else {
+        New-Item -ItemType Directory -Path $environmentOutputDirectory | Out-Null
+    }
 
     # esptool merge_bin erzeugt aus mehreren Einzeldateien ein Gesamtimage. Die
     # übergebenen Adressen sind die Adressen, an die PlatformIO beim normalen
@@ -350,9 +407,17 @@ function Build-AndBundleFirmware {
         -OutputHash $outputHash `
         -BuildDirectory $buildDirectory
 
+    New-EspWebToolsManifest `
+        -BuildConfiguration $BuildConfiguration `
+        -ProgramName $ProgramName `
+        -ProgramVersion $ProgramVersion `
+        -FirmwareFileName $outputFirmwareFileName `
+        -ManifestFile $outputManifestFile
+
     Write-Host "Erstellt:"
     Write-Host "  $outputFirmwareFile"
     Write-Host "  $outputMarkdownFile"
+    Write-Host "  $outputManifestFile"
 }
 
 # ---------------------------------------------------------------------------
@@ -370,6 +435,12 @@ if (-not (Test-Path -LiteralPath $outputDirectory)) {
 $configurationText = Get-Content -Raw -LiteralPath $configurationFile
 $programName = Read-ConfigurationString -ConfigurationText $configurationText -ConfigurationName "programName" -DefaultValue "BlePrompter"
 $programVersion = Read-ConfigurationString -ConfigurationText $configurationText -ConfigurationName "programVersion" -DefaultValue "unknown"
+
+# Alte flache Artefakte aus früheren Generatorversionen entfernen. Die neue
+# Zielstruktur ist download_bins/<umgebung>/ mit .bin, .md und manifest.json.
+Get-ChildItem -LiteralPath $outputDirectory -File -Force |
+    Where-Object { $_.Name -like "$programName-*-download.bin" -or $_.Name -like "$programName-*-download.md" } |
+    Remove-Item -Force
 
 $currentDate = Get-Date
 $buildDate = $currentDate.ToString("dd.MM.yyyy")

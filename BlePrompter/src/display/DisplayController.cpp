@@ -82,8 +82,7 @@ void DisplayController::applyDisplayRotation()
 
 void DisplayController::drawStartupScreen(
     const char *programName,
-    const char *programVersion,
-    const char *buildDate)
+    const char *programVersion)
 {
 #ifdef BOARD_CYD
     hardware.fillScreen(Ili9341Hardware::ColorBackground);
@@ -91,23 +90,14 @@ void DisplayController::drawStartupScreen(
     hardware.setCursor(10, 10);
     hardware.print(programName);
     hardware.setCursor(10, 35);
-    hardware.print("V ");
     hardware.print(programVersion);
-    hardware.setCursor(10, 60);
-    hardware.print("Build: ");
-    hardware.print(buildDate);
 #else
     prepareTextDisplay(false);
     hardware.setFont(u8g2_font_6x10_tf);
     hardware.setCursor(0, 8);
     hardware.print(programName);
     hardware.setCursor(0, 18);
-    hardware.print("V ");
     hardware.print(programVersion);
-    hardware.setCursor(0, 28);
-    hardware.print("Build:");
-    hardware.setCursor(0, 38);
-    hardware.print(buildDate);
     hardware.sendBuffer();
 #endif
 }
@@ -322,6 +312,7 @@ void DisplayController::drawSleepStatus(const char *firstLine, const char *secon
 
 void DisplayController::drawCycleListenWindowStatus(
     const char *programName,
+    const char *programVersion,
     const char *deviceIdentifier,
     uint32_t remainingSeconds)
 {
@@ -335,7 +326,7 @@ void DisplayController::drawCycleListenWindowStatus(
     hardware.setCursor(10, 20);
     hardware.print(programName);
     hardware.setCursor(10, 60);
-    hardware.print("Wachfenster");
+    hardware.print(programVersion);
     hardware.setCursor(10, 100);
     hardware.print(remainingText);
     hardware.setFont(reinterpret_cast<const void *>(static_cast<uintptr_t>(4)));
@@ -347,7 +338,7 @@ void DisplayController::drawCycleListenWindowStatus(
     hardware.setCursor(0, 8);
     hardware.print(programName);
     hardware.setCursor(0, 18);
-    hardware.print("Wachfenster");
+    hardware.print(programVersion);
     hardware.setCursor(0, 28);
     hardware.print(remainingText);
     hardware.setCursor(0, 38);

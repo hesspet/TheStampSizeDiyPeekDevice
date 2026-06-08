@@ -399,7 +399,7 @@ void startCycleListenWindow(unsigned long currentMillis)
     cycleListenWindowEndsMillis = currentMillis + activeCycleListenSeconds * 1000UL;
     nextCycleListenWindowDisplayUpdateMillis = 0;
     displayController.drawCycleListenWindowStatus(
-        programName, deviceIdentifier, activeCycleListenSeconds);
+        programName, programVersion, deviceIdentifier, activeCycleListenSeconds);
 }
 
 void updateCycleListenWindow(unsigned long currentMillis)
@@ -418,7 +418,7 @@ void updateCycleListenWindow(unsigned long currentMillis)
         const uint32_t remainingSeconds = static_cast<uint32_t>(
             (cycleListenWindowEndsMillis - currentMillis + 999UL) / 1000UL);
         displayController.drawCycleListenWindowStatus(
-            programName, deviceIdentifier, remainingSeconds);
+            programName, programVersion, deviceIdentifier, remainingSeconds);
         nextCycleListenWindowDisplayUpdateMillis = currentMillis + 1000UL;
     }
 }
@@ -1223,7 +1223,7 @@ void setup()
         return;
     }
 
-    displayController.drawStartupScreen(programName, programVersion, getEuropeanBuildDate());
+    displayController.drawStartupScreen(programName, programVersion);
     startupFinishedMillis = millis() + startupScreenDurationMillis;
 }
 
