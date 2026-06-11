@@ -34,6 +34,64 @@ std::string getUppercaseAsciiString(const std::string &value)
     return uppercaseValue;
 }
 
+#ifdef BOARD_CYD
+constexpr int16_t cydCenterX = 160;
+constexpr int16_t cydCenterY = 120;
+
+uint16_t getCydForegroundColor(bool inverted)
+{
+    return inverted ? Ili9341Hardware::ColorInvertForeground : Ili9341Hardware::ColorForeground;
+}
+
+uint16_t getCydBackgroundColor(bool inverted)
+{
+    return inverted ? Ili9341Hardware::ColorInvertBackground : Ili9341Hardware::ColorBackground;
+}
+
+TFT_eSPI &getCydTft(DisplayHardware &hardware)
+{
+    return static_cast<Ili9341Hardware &>(hardware).getTft();
+}
+
+void prepareCydTextDisplay(DisplayHardware &hardware, bool inverted)
+{
+    TFT_eSPI &tft = getCydTft(hardware);
+    tft.fillScreen(getCydBackgroundColor(inverted));
+    tft.setTextColor(getCydForegroundColor(inverted), getCydBackgroundColor(inverted), true);
+    tft.setTextSize(1);
+    tft.setTextDatum(TL_DATUM);
+    tft.setFreeFont(nullptr);
+}
+
+bool isSingleShortTextLine(const char *text)
+{
+    size_t characterCount = 0;
+    for (size_t characterIndex = 0; text[characterIndex] != '\0'; characterIndex++)
+    {
+        if (text[characterIndex] == '|' || text[characterIndex] == '\r' || text[characterIndex] == '\n')
+        {
+            return false;
+        }
+        characterCount++;
+    }
+
+    return characterCount >= 1 && characterCount <= 2;
+}
+
+void drawCenteredCydText(DisplayHardware &hardware, const char *text, const GFXfont *font,
+    uint8_t textScale, int16_t centerY, bool inverted)
+{
+    TFT_eSPI &tft = getCydTft(hardware);
+    tft.setTextColor(getCydForegroundColor(inverted), getCydBackgroundColor(inverted), true);
+    tft.setTextSize(textScale);
+    tft.setFreeFont(font);
+    tft.setTextDatum(MC_DATUM);
+    tft.drawString(text, cydCenterX, centerY);
+    tft.setTextDatum(TL_DATUM);
+    tft.setFreeFont(nullptr);
+}
+#endif
+
 } // namespace
 
 // ========================================================================
@@ -180,34 +238,48 @@ void DisplayController::clearDisplay()
 void DisplayController::drawPromptText(const char *text, bool inverted)
 {
 #ifdef BOARD_CYD
-    const uint16_t bgColor = inverted
-        ? Ili9341Hardware::ColorInvertBackground
-        : Ili9341Hardware::ColorBackground;
-    const uint16_t fgColor = inverted
-        ? Ili9341Hardware::ColorInvertForeground
-        : Ili9341Hardware::ColorForeground;
+    prepareCydTextDisplay(hardware, inverted);
 
-    hardware.fillScreen(bgColor);
-    hardware.setFont(reinterpret_cast<const void *>(static_cast<uintptr_t>(4)));
+    if (isSingleShortTextLine(text))
+    {
+        drawCenteredCydText(hardware, text, &FreeSansBold24pt7b, 2, cydCenterY, inverted);
+        return;
+    }
 
-    uint8_t lineIndex = 0;
+    char lineBuffers[5][64] = {};
+    uint8_t lineCount = 0;
     size_t lineStartIndex = 0;
     const size_t textLength = strlen(text);
 
-    for (size_t characterIndex = 0; characterIndex <= textLength && lineIndex < 12; characterIndex++)
+    for (size_t characterIndex = 0; characterIndex <= textLength && lineCount < 5; characterIndex++)
     {
         if (text[characterIndex] == '|' || text[characterIndex] == '\0')
         {
-            char lineBuffer[64] = {};
-            const size_t lineLength = min(characterIndex - lineStartIndex, sizeof(lineBuffer) - 1);
-            memcpy(lineBuffer, text + lineStartIndex, lineLength);
-            lineBuffer[lineLength] = '\0';
-
-            hardware.setCursor(10, 5 + lineIndex * 26);
-            hardware.print(lineBuffer);
-            lineIndex++;
+            const size_t lineLength = min(characterIndex - lineStartIndex, sizeof(lineBuffers[0]) - 1);
+            memcpy(lineBuffers[lineCount], text + lineStartIndex, lineLength);
+            lineBuffers[lineCount][lineLength] = '\0';
+            lineCount++;
             lineStartIndex = characterIndex + 1;
         }
+    }
+
+    if (lineCount == 0)
+    {
+        return;
+    }
+
+    constexpr int16_t lineSpacing = 54;
+    const int16_t firstLineY = cydCenterY - static_cast<int16_t>((lineCount - 1) * lineSpacing / 2);
+
+    for (uint8_t lineIndex = 0; lineIndex < lineCount; lineIndex++)
+    {
+        drawCenteredCydText(
+            hardware,
+            lineBuffers[lineIndex],
+            &FreeSansBold24pt7b,
+            1,
+            firstLineY + lineIndex * lineSpacing,
+            inverted);
     }
 #else
     prepareTextDisplay(inverted);

@@ -26,6 +26,12 @@ void prepareDisplay(DisplayHardware &hardware, bool inverted)
 {
     hardware.fillScreen(backgroundColor(inverted));
     hardware.setDrawColor(foregroundColor(inverted));
+
+    TFT_eSPI &tft = static_cast<Ili9341Hardware &>(hardware).getTft();
+    tft.setTextColor(foregroundColor(inverted), backgroundColor(inverted), true);
+    tft.setTextSize(1);
+    tft.setTextDatum(TL_DATUM);
+    tft.setFreeFont(nullptr);
 }
 
 std::string getUppercaseAsciiString(const std::string &value)
@@ -36,6 +42,19 @@ std::string getUppercaseAsciiString(const std::string &value)
         result[i] = static_cast<char>(toupper(static_cast<unsigned char>(result[i])));
     }
     return result;
+}
+
+void drawCenteredText(DisplayHardware &hardware, const char *text, const GFXfont *font,
+    uint8_t textScale, int16_t x, int16_t y, bool inverted)
+{
+    TFT_eSPI &tft = static_cast<Ili9341Hardware &>(hardware).getTft();
+    tft.setTextColor(foregroundColor(inverted), backgroundColor(inverted), true);
+    tft.setTextSize(textScale);
+    tft.setFreeFont(font);
+    tft.setTextDatum(MC_DATUM);
+    tft.drawString(text, x, y);
+    tft.setTextDatum(TL_DATUM);
+    tft.setFreeFont(nullptr);
 }
 
 } // namespace
@@ -111,11 +130,7 @@ void drawAsciiCharacters(DisplayHardware &hardware, const char *text, bool inver
     if (charCount >= 1) displayChars[0] = upper[0];
     if (charCount >= 2) displayChars[1] = upper[1];
 
-    // Großer Font für Symbole
-    hardware.setFont(reinterpret_cast<const void *>(static_cast<uintptr_t>(7)));
-    const int16_t textWidth = hardware.getStrWidth(displayChars);
-    hardware.setCursor((DisplayWidth - textWidth) / 2, CenterY - 20);
-    hardware.print(displayChars);
+    drawCenteredText(hardware, displayChars, &FreeSansBold24pt7b, 2, CenterX, CenterY, inverted);
 }
 
 // ========================================================================
@@ -164,32 +179,34 @@ void drawSuitSymbol(DisplayHardware &hardware, uint8_t suit,
 {
     const int16_t half = size / 2;
     const int16_t quarter = size / 4;
+    const int16_t lobeRadius = size / 4;
+    const int16_t stemWidth = size / 8;
 
     switch (suit)
     {
     case 0: // Hearts
-        hardware.drawDisc(x - quarter, y - quarter, quarter);
-        hardware.drawDisc(x + quarter, y - quarter, quarter);
-        hardware.drawTriangle(x - half, y, x + half, y, x, y - size);
+        hardware.drawDisc(x - quarter, y - quarter, lobeRadius);
+        hardware.drawDisc(x + quarter, y - quarter, lobeRadius);
+        hardware.drawTriangle(x - half, y - quarter / 2, x + half, y - quarter / 2, x, y + half);
         break;
 
     case 1: // Diamonds
         hardware.drawTriangle(x, y - half, x + half, y, x, y + half);
-        hardware.drawTriangle(x - half, y, x + half, y, x, y - half);
+        hardware.drawTriangle(x, y - half, x - half, y, x, y + half);
         break;
 
     case 2: // Clubs
-        hardware.drawDisc(x - quarter, y - quarter + 3, quarter);
-        hardware.drawDisc(x + quarter, y - quarter + 3, quarter);
-        hardware.drawDisc(x, y - half + 6, quarter);
-        hardware.drawBox(x - 3, y + 4, 7, half);
+        hardware.drawDisc(x, y - quarter, lobeRadius);
+        hardware.drawDisc(x - quarter, y, lobeRadius);
+        hardware.drawDisc(x + quarter, y, lobeRadius);
+        hardware.drawBox(x - stemWidth / 2, y + quarter / 2, stemWidth, half);
         break;
 
     case 3: // Spades
-        hardware.drawDisc(x - quarter, y - quarter + 3, quarter);
-        hardware.drawDisc(x + quarter, y - quarter + 3, quarter);
-        hardware.drawTriangle(x - half + 2, y, x + half - 2, y, x, y - half);
-        hardware.drawBox(x - 3, y + 2, 7, half + 2);
+        hardware.drawDisc(x - quarter, y, lobeRadius);
+        hardware.drawDisc(x + quarter, y, lobeRadius);
+        hardware.drawTriangle(x - half, y + quarter / 2, x + half, y + quarter / 2, x, y - half);
+        hardware.drawBox(x - stemWidth / 2, y + quarter / 2, stemWidth, half);
         break;
     }
 }
@@ -203,11 +220,7 @@ void drawPlayingCard(DisplayHardware &hardware, uint8_t cardIndex, bool inverted
 
     if (cardIndex == 52 || cardIndex == 53)
     {
-        // Joker: nur Text
-        hardware.setFont(reinterpret_cast<const void *>(static_cast<uintptr_t>(7)));
-        const int16_t tw = hardware.getStrWidth(cardText);
-        hardware.setCursor((DisplayWidth - tw) / 2, CenterY - 20);
-        hardware.print(cardText);
+        drawCenteredText(hardware, cardText, &FreeSansBold24pt7b, 2, CenterX, CenterY, inverted);
         return;
     }
 
@@ -217,13 +230,10 @@ void drawPlayingCard(DisplayHardware &hardware, uint8_t cardIndex, bool inverted
 
     // Linker Bereich: Kartensymbol
     hardware.setDrawColor(foregroundColor(inverted));
-    drawSuitSymbol(hardware, suit, CenterX - 70, CenterY, 60);
+    drawSuitSymbol(hardware, suit, CenterX - 86, CenterY + 6, 104);
 
     // Rechter Bereich: Wert als Text
-    hardware.setFont(reinterpret_cast<const void *>(static_cast<uintptr_t>(7)));
-    const int16_t tw = hardware.getStrWidth(rankText);
-    hardware.setCursor(CenterX + 30 - tw / 2, CenterY - 20);
-    hardware.print(rankText);
+    drawCenteredText(hardware, rankText, &FreeSansBold24pt7b, 2, CenterX + 82, CenterY, inverted);
 }
 
 // ========================================================================
@@ -239,16 +249,13 @@ void drawDiceFace(DisplayHardware &hardware, uint8_t faceValue, bool inverted)
 {
     prepareDisplay(hardware, inverted);
 
-    constexpr int16_t dotRadius = 16;
-    constexpr int16_t margin = 55;
+    constexpr int16_t dotRadius = 20;
+    constexpr int16_t margin = 62;
     constexpr int16_t leftX = CenterX - margin;
     constexpr int16_t rightX = CenterX + margin;
     constexpr int16_t topY = CenterY - margin;
     constexpr int16_t midY = CenterY;
     constexpr int16_t botY = CenterY + margin;
-
-    // Würfelrahmen
-    hardware.drawFrame(leftX - 30, topY - 30, 120, 120);
 
     switch (faceValue)
     {
