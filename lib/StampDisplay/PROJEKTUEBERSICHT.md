@@ -1,6 +1,6 @@
 ---
-Datum: 22.05.2026
-Version: 4
+Datum: 11.06.2026
+Version: 5
 Autor: Peter Heß, Germany (+Codex)
 ---
 # StampDisplay
@@ -18,6 +18,8 @@ Die Library bündelt Darstellungslogik, die von mehreren Unterprojekten genutzt 
 - normale und invertierte Darstellung mit hellem Hintergrund.
 
 Die Spielkartendarstellung wird von `BoardTest` und `BlePrompter` gemeinsam genutzt. Für `BlePrompter` ist wichtig, dass die Anzeige zur englischen BLE-Befehlssyntax passt: `Heart`, `Diamond`, `Clubs`, `Spade`, `Ace`, `Jack`, `Queen`, `King`; `X` bleibt die sichtbare 10.
+
+Die Spielkartenfarben Herz, Karo, Kreuz und Pik werden als gerasterte Vektorformen gezeichnet. Dadurch wirken die Kartenfarben auf dem kleinen OLED klarer und konsistenter mit der CYB/CYD-Darstellung.
 
 ## Dateien
 

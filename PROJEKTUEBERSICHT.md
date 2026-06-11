@@ -1,6 +1,6 @@
 ---
-Datum: 30.05.2026
-Version: 10
+Datum: 11.06.2026
+Version: 11
 Autor: Peter Heß, Germany (+Codex)
 ---
 # Projektübersicht
@@ -23,7 +23,7 @@ Dieses Repository sammelt mehrere PlatformIO-Unterprojekte für das kleine ESP32
 | Unterprojekt | Zweck |
 | --- | --- |
 | [BoardTest](BoardTest/PROJEKTUEBERSICHT.md) | Test-Firmware `1.2.0` für OLED, Buildanzeige, GPIO9-gesteuerten automatischen Testmodus, projektweite Display-Library, selbst gezeichnete Pfeile, ASCII-Zeichenanzeige, Spielkarten und invertierte Anzeige des ESP32-C3-OLED-Boards. |
-| [BlePrompter](BlePrompter/PROJEKTUEBERSICHT.md) | BLE-UART-Firmware `1.5.3` mit Nordic UART Service für Android-Apps, MacroDroid/BLE-Plugins und Terminal-Makros. Zeigt Text, Pfeile, ESP-Symbole und Spielkarten auf dem OLED an, unterstützt Display-Schlaf und zyklischen Tiefschlaf, startet nach Reset mit einem BLE-Wachfenster und nutzt Clear-Markierungen als sichtbaren Verbindungsindikator. |
+| [BlePrompter](BlePrompter/PROJEKTUEBERSICHT.md) | BLE-UART-Firmware `1.9.1` mit Nordic UART Service für Android-Apps, MacroDroid/BLE-Plugins und Terminal-Makros. Zeigt Text, Pfeile, ESP-Symbole, Würfel und Spielkarten auf OLED sowie CYB/CYD an, nutzt verbesserte gerasterte Vektorformen für Spielkartenfarben, unterstützt Display-Schlaf und zyklischen Tiefschlaf, startet nach Reset mit einem BLE-Wachfenster und nutzt Clear-Markierungen als sichtbaren Verbindungsindikator. |
 | [EnduranceTest](EnduranceTest/PROJEKTUEBERSICHT.md) | Dauertest-Firmware `1.0.0` für BLE-Scan, wechselnde OLED-Anzeigen, WLAN-Scan, simulierte Nutzung und UDP-Broadcast der RAM-Protokolldaten nach jedem Testzyklus. |
 | [EnduranceTestClient](EnduranceTestClient/PROJEKTUEBERSICHT.md) | Python-Client zum dauerhaften Empfang der `EnduranceTest`-UDP-Broadcasts und JSONL-Protokollierung im Temp-Verzeichnis. |
 

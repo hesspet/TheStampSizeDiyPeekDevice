@@ -2,6 +2,7 @@
 #include "display/Ili9341Hardware.h"
 
 #include <cstring>
+#include <math.h>
 #include <string>
 
 namespace
@@ -42,6 +43,64 @@ std::string getUppercaseAsciiString(const std::string &value)
         result[i] = static_cast<char>(toupper(static_cast<unsigned char>(result[i])));
     }
     return result;
+}
+
+bool isHeartPixel(float normalizedX, float normalizedY)
+{
+    const float shiftedY = normalizedY + 0.10f;
+    const float squareTerm = normalizedX * normalizedX + shiftedY * shiftedY - 1.0f;
+    return squareTerm * squareTerm * squareTerm - normalizedX * normalizedX * shiftedY * shiftedY * shiftedY <= 0.0f
+        && shiftedY > -1.05f;
+}
+
+bool isDiamondPixel(float normalizedX, float normalizedY)
+{
+    return fabsf(normalizedX) * 0.78f + fabsf(normalizedY) <= 0.86f;
+}
+
+bool isClubPixel(float normalizedX, float normalizedY)
+{
+    const bool topLobe = normalizedX * normalizedX + (normalizedY - 0.35f) * (normalizedY - 0.35f) <= 0.17f;
+    const bool leftLobe = (normalizedX + 0.38f) * (normalizedX + 0.38f) + (normalizedY + 0.08f) * (normalizedY + 0.08f) <= 0.17f;
+    const bool rightLobe = (normalizedX - 0.38f) * (normalizedX - 0.38f) + (normalizedY + 0.08f) * (normalizedY + 0.08f) <= 0.17f;
+    const bool stem = fabsf(normalizedX) <= 0.13f && normalizedY <= -0.05f && normalizedY >= -0.78f;
+    const bool foot = fabsf(normalizedX) <= 0.34f && normalizedY <= -0.70f && normalizedY >= -0.86f;
+    return topLobe || leftLobe || rightLobe || stem || foot;
+}
+
+bool isSpadePixel(float normalizedX, float normalizedY)
+{
+    const bool pointedTop = normalizedY >= 0.08f
+        && normalizedY <= 0.92f
+        && fabsf(normalizedX) <= (0.96f - normalizedY) * 0.64f;
+    const bool leftShoulder = (normalizedX + 0.34f) * (normalizedX + 0.34f)
+        + (normalizedY + 0.08f) * (normalizedY + 0.08f) <= 0.24f;
+    const bool rightShoulder = (normalizedX - 0.34f) * (normalizedX - 0.34f)
+        + (normalizedY + 0.08f) * (normalizedY + 0.08f) <= 0.24f;
+    const bool middleFill = fabsf(normalizedX) <= 0.36f && normalizedY >= -0.18f && normalizedY <= 0.28f;
+    const bool stem = fabsf(normalizedX) <= 0.13f && normalizedY <= -0.12f && normalizedY >= -0.78f;
+    const bool foot = fabsf(normalizedX) <= 0.34f && normalizedY <= -0.70f && normalizedY >= -0.86f;
+    return pointedTop || leftShoulder || rightShoulder || middleFill || stem || foot;
+}
+
+bool isSuitPixel(uint8_t suit, uint8_t pixelX, uint8_t pixelY, uint8_t gridSize)
+{
+    const float normalizedX = (((static_cast<float>(pixelX) + 0.5f) / static_cast<float>(gridSize)) * 2.0f - 1.0f) * 1.18f;
+    const float normalizedY = (1.0f - ((static_cast<float>(pixelY) + 0.5f) / static_cast<float>(gridSize)) * 2.0f) * 1.18f;
+
+    switch (suit)
+    {
+    case 0:
+        return isHeartPixel(normalizedX, normalizedY);
+    case 1:
+        return isDiamondPixel(normalizedX, normalizedY);
+    case 2:
+        return isClubPixel(normalizedX, normalizedY);
+    case 3:
+        return isSpadePixel(normalizedX, normalizedY);
+    }
+
+    return false;
 }
 
 void drawCenteredText(DisplayHardware &hardware, const char *text, const GFXfont *font,
@@ -177,37 +236,25 @@ const char *getCardDescription(uint8_t cardIndex, char *buffer, size_t bufferSiz
 void drawSuitSymbol(DisplayHardware &hardware, uint8_t suit,
     int16_t x, int16_t y, int16_t size)
 {
-    const int16_t half = size / 2;
-    const int16_t quarter = size / 4;
-    const int16_t lobeRadius = size / 4;
-    const int16_t stemWidth = size / 8;
+    constexpr uint8_t gridSize = 52;
+    const int16_t pixelSize = size / gridSize;
+    const int16_t effectiveSize = pixelSize * gridSize;
+    const int16_t originX = x - effectiveSize / 2;
+    const int16_t originY = y - effectiveSize / 2;
 
-    switch (suit)
+    for (uint8_t pixelY = 0; pixelY < gridSize; pixelY++)
     {
-    case 0: // Hearts
-        hardware.drawDisc(x - quarter, y - quarter, lobeRadius);
-        hardware.drawDisc(x + quarter, y - quarter, lobeRadius);
-        hardware.drawTriangle(x - half, y - quarter / 2, x + half, y - quarter / 2, x, y + half);
-        break;
-
-    case 1: // Diamonds
-        hardware.drawTriangle(x, y - half, x + half, y, x, y + half);
-        hardware.drawTriangle(x, y - half, x - half, y, x, y + half);
-        break;
-
-    case 2: // Clubs
-        hardware.drawDisc(x, y - quarter, lobeRadius);
-        hardware.drawDisc(x - quarter, y, lobeRadius);
-        hardware.drawDisc(x + quarter, y, lobeRadius);
-        hardware.drawBox(x - stemWidth / 2, y + quarter / 2, stemWidth, half);
-        break;
-
-    case 3: // Spades
-        hardware.drawDisc(x - quarter, y, lobeRadius);
-        hardware.drawDisc(x + quarter, y, lobeRadius);
-        hardware.drawTriangle(x - half, y + quarter / 2, x + half, y + quarter / 2, x, y - half);
-        hardware.drawBox(x - stemWidth / 2, y + quarter / 2, stemWidth, half);
-        break;
+        for (uint8_t pixelX = 0; pixelX < gridSize; pixelX++)
+        {
+            if (isSuitPixel(suit, pixelX, pixelY, gridSize))
+            {
+                hardware.drawBox(
+                    originX + pixelX * pixelSize,
+                    originY + pixelY * pixelSize,
+                    pixelSize,
+                    pixelSize);
+            }
+        }
     }
 }
 
@@ -243,6 +290,51 @@ void drawPlayingCard(DisplayHardware &hardware, uint8_t cardIndex, bool inverted
 void drawDot(DisplayHardware &hardware, int16_t x, int16_t y, int16_t radius)
 {
     hardware.drawDisc(x, y, radius);
+}
+
+void drawThickLine(DisplayHardware &hardware, int16_t startX, int16_t startY, int16_t endX, int16_t endY, int16_t radius)
+{
+    for (int16_t offsetX = -radius; offsetX <= radius; offsetX++)
+    {
+        for (int16_t offsetY = -radius; offsetY <= radius; offsetY++)
+        {
+            if (offsetX * offsetX + offsetY * offsetY <= radius * radius)
+            {
+                hardware.drawLine(
+                    startX + offsetX,
+                    startY + offsetY,
+                    endX + offsetX,
+                    endY + offsetY);
+            }
+        }
+    }
+}
+
+void drawWaveSymbol(DisplayHardware &hardware)
+{
+    constexpr int16_t waveTopY = CenterY - 70;
+    constexpr int16_t waveBottomY = CenterY + 70;
+    constexpr int16_t waveStepY = 4;
+    constexpr int16_t waveAmplitude = 13;
+    constexpr int16_t waveThickness = 4;
+    constexpr float waveCycles = 2.0f;
+    const int16_t waveCenters[] = {CenterX - 52, CenterX, CenterX + 52};
+
+    for (uint8_t waveIndex = 0; waveIndex < 3; waveIndex++)
+    {
+        const int16_t centerX = waveCenters[waveIndex];
+        int16_t previousX = centerX;
+        int16_t previousY = waveTopY;
+
+        for (int16_t currentY = waveTopY + waveStepY; currentY <= waveBottomY; currentY += waveStepY)
+        {
+            const float progress = static_cast<float>(currentY - waveTopY) / static_cast<float>(waveBottomY - waveTopY);
+            const int16_t currentX = centerX + static_cast<int16_t>(sinf(progress * waveCycles * 2.0f * PI) * waveAmplitude);
+            drawThickLine(hardware, previousX, previousY, currentX, currentY, waveThickness);
+            previousX = currentX;
+            previousY = currentY;
+        }
+    }
 }
 
 void drawDiceFace(DisplayHardware &hardware, uint8_t faceValue, bool inverted)
@@ -318,12 +410,7 @@ void drawEspSymbol(DisplayHardware &hardware, EspSymbol symbol, bool inverted)
         break;
 
     case EspSymbol::waves:
-        for (int16_t i = 0; i < 8; i++)
-        {
-            const int16_t x = CenterX - 70 + i * 20;
-            hardware.drawLine(x, CenterY + 50, x + 10, CenterY - 50);
-            hardware.drawLine(x, CenterY - 50, x + 10, CenterY + 50);
-        }
+        drawWaveSymbol(hardware);
         break;
 
     case EspSymbol::square:

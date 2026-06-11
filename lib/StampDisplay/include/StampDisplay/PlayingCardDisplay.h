@@ -57,9 +57,10 @@ private:
     void prepareDisplay(U8G2 &display, bool inverted) const;
     void drawNormalCard(U8G2 &display, const PlayingCard &playingCard) const;
     void drawJokerCard(U8G2 &display, PlayingCardRank rank) const;
-    void drawCardSuit(U8G2 &display, PlayingCardSuit suit, uint8_t originX, uint8_t originY) const;
-    void drawHeartSuit(U8G2 &display, uint8_t originX, uint8_t originY) const;
-    void drawDiamondSuit(U8G2 &display, uint8_t originX, uint8_t originY) const;
-    void drawClubSuit(U8G2 &display, uint8_t originX, uint8_t originY) const;
-    void drawSpadeSuit(U8G2 &display, uint8_t originX, uint8_t originY) const;
+    void drawCardSuit(U8G2 &display, PlayingCardSuit suit, uint8_t originX, uint8_t originY, uint8_t size) const;
+    bool isSuitPixel(PlayingCardSuit suit, uint8_t pixelX, uint8_t pixelY, uint8_t size) const;
+    bool isHeartPixel(float normalizedX, float normalizedY) const;
+    bool isDiamondPixel(float normalizedX, float normalizedY) const;
+    bool isClubPixel(float normalizedX, float normalizedY) const;
+    bool isSpadePixel(float normalizedX, float normalizedY) const;
 };

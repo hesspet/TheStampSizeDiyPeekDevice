@@ -1,6 +1,6 @@
 ---
-Datum: 01.06.2026
-Version: 16
+Datum: 11.06.2026
+Version: 17
 Autor: Peter Heß, Germany (+Codex)
 ---
 
@@ -107,9 +107,9 @@ Unterstützt werden: `TEXT`, `SYMBOL`, `ESP`, `ARROW`, `CARD`, `CUBE`, `INVERT`,
 
 ## Display-Bibliotheken
 
-**OLED-Pfad:** Nutzt `../lib/StampDisplay` für Pfeile, Symbole, ESP-Symbole, Würfel und Spielkarten.
+**OLED-Pfad:** Nutzt `../lib/StampDisplay` für Pfeile, Symbole, ESP-Symbole, Würfel und Spielkarten. Die Spielkartenfarben werden als gerasterte Vektorformen gezeichnet, damit Herz, Karo, Kreuz und Pik auf dem kleinen OLED konsistenter und hochwertiger wirken.
 
-**CYB-Pfad:** Nutzt das eingebaute `CydDisplay`-Modul für die gleichen Symbole, skaliert auf das größere Farbdisplay.
+**CYB-Pfad:** Nutzt das eingebaute `CydDisplay`-Modul für die gleichen Symbole, skaliert auf das größere Farbdisplay. Die Spielkartenfarben nutzen dieselben gerasterten Vektorformen wie der OLED-Pfad, aber in höherer Rasterauflösung.
 
 ## Debug und Konfiguration
 

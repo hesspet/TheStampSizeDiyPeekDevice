@@ -1,13 +1,15 @@
 #include <StampDisplay/PlayingCardDisplay.h>
 
 #include <cstdio>
+#include <math.h>
 
 namespace
 {
 constexpr uint8_t displayWidth = 72;
 constexpr uint8_t displayHeight = 40;
-constexpr uint8_t normalCardSuitOriginX = 1;
-constexpr uint8_t normalCardSuitOriginY = 3;
+constexpr uint8_t normalCardSuitOriginX = 0;
+constexpr uint8_t normalCardSuitOriginY = 2;
+constexpr uint8_t normalCardSuitSize = 36;
 constexpr uint8_t normalCardValueBaselineY = 34;
 constexpr uint8_t normalCardValueRightMarginX = 71;
 constexpr uint8_t jokerBaselineY = 34;
@@ -197,7 +199,7 @@ void PlayingCardDisplay::prepareDisplay(U8G2 &display, bool inverted) const
 
 void PlayingCardDisplay::drawNormalCard(U8G2 &display, const PlayingCard &playingCard) const
 {
-    drawCardSuit(display, playingCard.suit, normalCardSuitOriginX, normalCardSuitOriginY);
+    drawCardSuit(display, playingCard.suit, normalCardSuitOriginX, normalCardSuitOriginY, normalCardSuitSize);
 
     display.setFont(u8g2_font_helvB24_tf);
     const char *rankText = getRankDisplayText(playingCard.rank);
@@ -213,52 +215,79 @@ void PlayingCardDisplay::drawJokerCard(U8G2 &display, PlayingCardRank rank) cons
     display.drawStr((displayWidth - jokerTextWidth) / 2, jokerBaselineY, jokerText);
 }
 
-void PlayingCardDisplay::drawCardSuit(U8G2 &display, PlayingCardSuit suit, uint8_t originX, uint8_t originY) const
+void PlayingCardDisplay::drawCardSuit(
+    U8G2 &display,
+    PlayingCardSuit suit,
+    uint8_t originX,
+    uint8_t originY,
+    uint8_t size) const
 {
-    switch (suit)
+    for (uint8_t pixelY = 0; pixelY < size; pixelY++)
     {
-        case PlayingCardSuit::hearts:
-            drawHeartSuit(display, originX, originY);
-            break;
-        case PlayingCardSuit::diamonds:
-            drawDiamondSuit(display, originX, originY);
-            break;
-        case PlayingCardSuit::clubs:
-            drawClubSuit(display, originX, originY);
-            break;
-        case PlayingCardSuit::spades:
-            drawSpadeSuit(display, originX, originY);
-            break;
+        for (uint8_t pixelX = 0; pixelX < size; pixelX++)
+        {
+            if (isSuitPixel(suit, pixelX, pixelY, size))
+            {
+                display.drawPixel(originX + pixelX, originY + pixelY);
+            }
+        }
     }
 }
 
-void PlayingCardDisplay::drawHeartSuit(U8G2 &display, uint8_t originX, uint8_t originY) const
+bool PlayingCardDisplay::isSuitPixel(PlayingCardSuit suit, uint8_t pixelX, uint8_t pixelY, uint8_t size) const
 {
-    display.drawDisc(originX + 10, originY + 10, 10, U8G2_DRAW_ALL);
-    display.drawDisc(originX + 24, originY + 10, 10, U8G2_DRAW_ALL);
-    display.drawTriangle(originX + 1, originY + 13, originX + 33, originY + 13, originX + 17, originY + 33);
+    const float normalizedX = (((static_cast<float>(pixelX) + 0.5f) / static_cast<float>(size)) * 2.0f - 1.0f) * 1.18f;
+    const float normalizedY = (1.0f - ((static_cast<float>(pixelY) + 0.5f) / static_cast<float>(size)) * 2.0f) * 1.18f;
+
+    switch (suit)
+    {
+        case PlayingCardSuit::hearts:
+            return isHeartPixel(normalizedX, normalizedY);
+        case PlayingCardSuit::diamonds:
+            return isDiamondPixel(normalizedX, normalizedY);
+        case PlayingCardSuit::clubs:
+            return isClubPixel(normalizedX, normalizedY);
+        case PlayingCardSuit::spades:
+            return isSpadePixel(normalizedX, normalizedY);
+    }
+
+    return false;
 }
 
-void PlayingCardDisplay::drawDiamondSuit(U8G2 &display, uint8_t originX, uint8_t originY) const
+bool PlayingCardDisplay::isHeartPixel(float normalizedX, float normalizedY) const
 {
-    display.drawTriangle(originX + 17, originY, originX + 34, originY + 17, originX, originY + 17);
-    display.drawTriangle(originX + 17, originY + 34, originX + 34, originY + 17, originX, originY + 17);
+    const float shiftedY = normalizedY + 0.10f;
+    const float squareTerm = normalizedX * normalizedX + shiftedY * shiftedY - 1.0f;
+    return squareTerm * squareTerm * squareTerm - normalizedX * normalizedX * shiftedY * shiftedY * shiftedY <= 0.0f
+        && shiftedY > -1.05f;
 }
 
-void PlayingCardDisplay::drawClubSuit(U8G2 &display, uint8_t originX, uint8_t originY) const
+bool PlayingCardDisplay::isDiamondPixel(float normalizedX, float normalizedY) const
 {
-    display.drawDisc(originX + 17, originY + 9, 9, U8G2_DRAW_ALL);
-    display.drawDisc(originX + 9, originY + 21, 9, U8G2_DRAW_ALL);
-    display.drawDisc(originX + 25, originY + 21, 9, U8G2_DRAW_ALL);
-    display.drawBox(originX + 14, originY + 21, 7, 14);
-    display.drawBox(originX + 10, originY + 32, 15, 4);
+    return fabsf(normalizedX) * 0.78f + fabsf(normalizedY) <= 0.86f;
 }
 
-void PlayingCardDisplay::drawSpadeSuit(U8G2 &display, uint8_t originX, uint8_t originY) const
+bool PlayingCardDisplay::isClubPixel(float normalizedX, float normalizedY) const
 {
-    display.drawDisc(originX + 10, originY + 21, 10, U8G2_DRAW_ALL);
-    display.drawDisc(originX + 24, originY + 21, 10, U8G2_DRAW_ALL);
-    display.drawTriangle(originX + 2, originY + 21, originX + 32, originY + 21, originX + 17, originY);
-    display.drawBox(originX + 14, originY + 22, 7, 13);
-    display.drawBox(originX + 10, originY + 32, 15, 4);
+    const bool topLobe = normalizedX * normalizedX + (normalizedY - 0.35f) * (normalizedY - 0.35f) <= 0.17f;
+    const bool leftLobe = (normalizedX + 0.38f) * (normalizedX + 0.38f) + (normalizedY + 0.08f) * (normalizedY + 0.08f) <= 0.17f;
+    const bool rightLobe = (normalizedX - 0.38f) * (normalizedX - 0.38f) + (normalizedY + 0.08f) * (normalizedY + 0.08f) <= 0.17f;
+    const bool stem = fabsf(normalizedX) <= 0.13f && normalizedY <= -0.05f && normalizedY >= -0.78f;
+    const bool foot = fabsf(normalizedX) <= 0.34f && normalizedY <= -0.70f && normalizedY >= -0.86f;
+    return topLobe || leftLobe || rightLobe || stem || foot;
+}
+
+bool PlayingCardDisplay::isSpadePixel(float normalizedX, float normalizedY) const
+{
+    const bool pointedTop = normalizedY >= 0.08f
+        && normalizedY <= 0.92f
+        && fabsf(normalizedX) <= (0.96f - normalizedY) * 0.64f;
+    const bool leftShoulder = (normalizedX + 0.34f) * (normalizedX + 0.34f)
+        + (normalizedY + 0.08f) * (normalizedY + 0.08f) <= 0.24f;
+    const bool rightShoulder = (normalizedX - 0.34f) * (normalizedX - 0.34f)
+        + (normalizedY + 0.08f) * (normalizedY + 0.08f) <= 0.24f;
+    const bool middleFill = fabsf(normalizedX) <= 0.36f && normalizedY >= -0.18f && normalizedY <= 0.28f;
+    const bool stem = fabsf(normalizedX) <= 0.13f && normalizedY <= -0.12f && normalizedY >= -0.78f;
+    const bool foot = fabsf(normalizedX) <= 0.34f && normalizedY <= -0.70f && normalizedY >= -0.86f;
+    return pointedTop || leftShoulder || rightShoulder || middleFill || stem || foot;
 }

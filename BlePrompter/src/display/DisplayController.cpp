@@ -90,6 +90,24 @@ void drawCenteredCydText(DisplayHardware &hardware, const char *text, const GFXf
     tft.setTextDatum(TL_DATUM);
     tft.setFreeFont(nullptr);
 }
+
+void drawCydText(DisplayHardware &hardware, const char *text, const GFXfont *font,
+    uint8_t textScale, int16_t x, int16_t y, uint8_t textDatum, bool inverted)
+{
+    TFT_eSPI &tft = getCydTft(hardware);
+    tft.setTextColor(getCydForegroundColor(inverted), getCydBackgroundColor(inverted), true);
+    tft.setTextSize(textScale);
+    tft.setFreeFont(font);
+    tft.setTextDatum(textDatum);
+    tft.drawString(text, x, y);
+    tft.setTextDatum(TL_DATUM);
+    tft.setFreeFont(nullptr);
+}
+
+void drawCydStatusLine(DisplayHardware &hardware, const char *text, int16_t y, bool inverted)
+{
+    drawCydText(hardware, text, &FreeSansBold24pt7b, 1, cydCenterX, y, MC_DATUM, inverted);
+}
 #endif
 
 } // namespace
@@ -143,12 +161,9 @@ void DisplayController::drawStartupScreen(
     const char *programVersion)
 {
 #ifdef BOARD_CYD
-    hardware.fillScreen(Ili9341Hardware::ColorBackground);
-    hardware.setFont(reinterpret_cast<const void *>(static_cast<uintptr_t>(4)));
-    hardware.setCursor(10, 10);
-    hardware.print(programName);
-    hardware.setCursor(10, 35);
-    hardware.print(programVersion);
+    prepareCydTextDisplay(hardware, false);
+    drawCydStatusLine(hardware, programName, 86, false);
+    drawCydStatusLine(hardware, programVersion, 146, false);
 #else
     prepareTextDisplay(false);
     hardware.setFont(u8g2_font_6x10_tf);
@@ -165,20 +180,12 @@ void DisplayController::drawIdleScreen(
     const char *deviceIdentifier)
 {
 #ifdef BOARD_CYD
-    hardware.fillScreen(Ili9341Hardware::ColorBackground);
-    hardware.setFont(reinterpret_cast<const void *>(static_cast<uintptr_t>(4)));
-    hardware.setCursor(10, 10);
-    hardware.print("BlePrompter CYD");
-    hardware.setCursor(10, 35);
-    hardware.print("BLE bereit");
-    hardware.setCursor(10, 60);
-    hardware.print(deviceIdentifier);
-    hardware.setCursor(10, 85);
-    hardware.print(bluetoothConnected ? "Verbunden" : "Wartet...");
-    hardware.setCursor(10, 110);
-    hardware.print("Text / Symbol / Arrow");
-    hardware.setCursor(10, 135);
-    hardware.print("Card / Cube / Esp");
+    prepareCydTextDisplay(hardware, false);
+    drawCydStatusLine(hardware, "BlePrompter CYD", 38, false);
+    drawCydStatusLine(hardware, "BLE bereit", 86, false);
+    drawCydStatusLine(hardware, deviceIdentifier, 134, false);
+    drawCydStatusLine(hardware, bluetoothConnected ? "Verbunden" : "Wartet...", 182, false);
+    drawCydText(hardware, "Text  Symbol  Karte", &FreeSansBold24pt7b, 1, cydCenterX, 224, MC_DATUM, false);
 #else
     prepareTextDisplay(false);
     hardware.setFont(u8g2_font_6x10_tf);
@@ -365,12 +372,9 @@ void DisplayController::drawEspSymbol(EspSymbol symbol, bool inverted)
 void DisplayController::drawSleepStatus(const char *firstLine, const char *secondLine)
 {
 #ifdef BOARD_CYD
-    hardware.fillScreen(Ili9341Hardware::ColorBackground);
-    hardware.setFont(reinterpret_cast<const void *>(static_cast<uintptr_t>(6)));
-    hardware.setCursor(10, 40);
-    hardware.print(firstLine);
-    hardware.setCursor(10, 90);
-    hardware.print(secondLine);
+    prepareCydTextDisplay(hardware, false);
+    drawCydStatusLine(hardware, firstLine, 88, false);
+    drawCydStatusLine(hardware, secondLine, 150, false);
 #else
     prepareTextDisplay(false);
     hardware.setFont(u8g2_font_6x10_tf);
@@ -393,17 +397,11 @@ void DisplayController::drawCycleListenWindowStatus(
         static_cast<unsigned long>(remainingSeconds));
 
 #ifdef BOARD_CYD
-    hardware.fillScreen(Ili9341Hardware::ColorBackground);
-    hardware.setFont(reinterpret_cast<const void *>(static_cast<uintptr_t>(6)));
-    hardware.setCursor(10, 20);
-    hardware.print(programName);
-    hardware.setCursor(10, 60);
-    hardware.print(programVersion);
-    hardware.setCursor(10, 100);
-    hardware.print(remainingText);
-    hardware.setFont(reinterpret_cast<const void *>(static_cast<uintptr_t>(4)));
-    hardware.setCursor(10, 140);
-    hardware.print(deviceIdentifier);
+    prepareCydTextDisplay(hardware, false);
+    drawCydStatusLine(hardware, programName, 34, false);
+    drawCydStatusLine(hardware, programVersion, 82, false);
+    drawCydStatusLine(hardware, remainingText, 136, false);
+    drawCydStatusLine(hardware, deviceIdentifier, 190, false);
 #else
     prepareTextDisplay(false);
     hardware.setFont(u8g2_font_6x10_tf);
@@ -427,16 +425,9 @@ void DisplayController::drawDeepSleepCountdown(uint8_t secondsRemaining)
     };
 
 #ifdef BOARD_CYD
-    hardware.fillScreen(Ili9341Hardware::ColorBackground);
-    hardware.setFont(reinterpret_cast<const void *>(static_cast<uintptr_t>(4)));
-    hardware.setCursor(10, 20);
-    hardware.print("Zykl. Schlaf");
-
-    hardware.setFont(reinterpret_cast<const void *>(static_cast<uintptr_t>(7)));
-    const int16_t countdownWidth = hardware.getStrWidth(countdownText);
-    const int16_t countdownX = (hardware.getDisplayWidth() - countdownWidth) / 2;
-    hardware.setCursor(countdownX, 130);
-    hardware.print(countdownText);
+    prepareCydTextDisplay(hardware, false);
+    drawCydStatusLine(hardware, "Zykl. Schlaf", 54, false);
+    drawCenteredCydText(hardware, countdownText, &FreeSansBold24pt7b, 2, 156, false);
 #else
     prepareTextDisplay(false);
     hardware.setFont(u8g2_font_6x10_tf);
