@@ -5,8 +5,8 @@
 // ========================================================================
 // Board-Erkennung
 // ========================================================================
-// BOARD_CYD wird via platformio.ini build_flags gesetzt.
-// Ohne BOARD_CYD wird das ESP32-C3-OLED-Board angenommen.
+// BOARD_CYD und BOARD_M5STICKCPLUS2 werden via platformio.ini build_flags gesetzt.
+// Ohne Board-Makro wird das ESP32-C3-OLED-Board angenommen.
 
 enum class DebugLevel : uint8_t
 {
@@ -21,7 +21,7 @@ enum class DebugLevel : uint8_t
 // ========================================================================
 
 constexpr const char *programName = "BlePrompter";
-constexpr const char *programVersion = "1.9.1";
+constexpr const char *programVersion = "1.10.0";
 constexpr const char *bluetoothDeviceName = "BlePrompter";
 constexpr DebugLevel configuredDebugLevel = DebugLevel::info;
 
@@ -64,6 +64,22 @@ constexpr uint8_t clearDisplayMarkerSizePixels = 4;
 // Tiefschlaf-Funktionen bleiben via BLE-Befehle verfügbar,
 // aber der Standard-Power-On-Zyklus ist deaktiviert.
 constexpr bool startCycleSleepOnPowerOn_Cyd = false;
+
+#elif defined(BOARD_M5STICKCPLUS2)
+
+// --- M5StickC Plus2: ESP32-PICO mit TFT 240×135 im Landscape-Format ---
+// Display und Stromversorgung werden über M5Unified initialisiert.
+
+constexpr uint8_t buttonPin = 37;           // Front-Button A
+constexpr uint8_t buttonPressedLevel = LOW; // gedrückt = LOW
+constexpr unsigned long buttonDebounceDurationMillis = 50;
+constexpr unsigned long deepSleepButtonHoldDurationMillis = 5000;
+constexpr unsigned long deepSleepCountdownIntervalMillis = 1000;
+
+constexpr uint8_t clearDisplayMarkerSizePixels = 4;
+
+// Der kleine Akku des M5StickC Plus2 erfordert zyklischen Schlaf wie beim OLED-Board.
+constexpr bool startCycleSleepOnPowerOn_M5StickCPlus2 = true;
 
 #else
 

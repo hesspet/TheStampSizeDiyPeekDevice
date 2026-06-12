@@ -13,6 +13,10 @@
 #include "display/DisplayController.h"
 #include "display/Ili9341Hardware.h"
 #include "display/CydDisplay.h"
+#elif defined(BOARD_M5STICKCPLUS2)
+#include "display/DisplayController.h"
+#include "display/M5StickHardware.h"
+#include "display/M5StickDisplay.h"
 #else
 #include <U8g2lib.h>
 #include <Wire.h>
@@ -43,6 +47,8 @@ constexpr size_t savedDisplayBufferSize = 72 * 40 / 8;
 
 #ifdef BOARD_CYD
 Ili9341Hardware displayHardware;
+#elif defined(BOARD_M5STICKCPLUS2)
+M5StickHardware displayHardware;
 #else
 Ssd1306Hardware displayHardware(displayDataPin, displayClockPin);
 #endif
@@ -202,6 +208,8 @@ void writeStartupHeader()
     writeLineToOutputs("BLE-Profil: Nordic UART Service");
 #ifdef BOARD_CYD
     writeLineToOutputs("Board: CYD ESP32-WROOM-32 ILI9341 320x240");
+#elif defined(BOARD_M5STICKCPLUS2)
+    writeLineToOutputs("Board: M5StickC Plus2 TFT 240 x 135 Landscape");
 #else
     writeLineToOutputs("Board: ESP32-C3 OLED 72 x 40");
 #endif
@@ -1177,7 +1185,7 @@ void setup()
         startCycleSleepOnPowerOn && wakeupCause == ESP_SLEEP_WAKEUP_UNDEFINED;
 
     // CYD: kein zyklischer Tiefschlaf beim Power-On.
-    // ESP32-C3 OLED: zyklischer Sleep spart OLED-Strom.
+    // ESP32-C3 OLED und M5StickC Plus2: zyklischer Sleep spart Akkustrom.
 #ifdef BOARD_CYD
     cycleSleepState.active = false;
 #else
@@ -1201,7 +1209,7 @@ void setup()
 
     writeStartupHeader();
 
-    // Nur ESP32-C3 OLED: zyklischer Tiefschlaf beim Power-On.
+    // ESP32-C3 OLED und M5StickC Plus2: zyklischer Tiefschlaf beim Power-On.
 #ifndef BOARD_CYD
     if (shouldStartCycleSleepAfterPowerOn)
     {

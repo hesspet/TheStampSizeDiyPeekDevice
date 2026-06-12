@@ -63,7 +63,7 @@ private:
     void applyDisplayRotation();
 
     // --- OLED-Pfad: StampDisplay-Objekte ---
-#ifndef BOARD_CYD
+#if !defined(BOARD_CYD) && !defined(BOARD_M5STICKCPLUS2)
     void drawArrowOled(CompassDirection compassDirection, bool inverted);
     void drawAsciiCharactersOled(const char *text, bool inverted);
     void drawPlayingCardOled(uint8_t cardIndex, bool inverted);
@@ -78,5 +78,14 @@ private:
     void drawPlayingCardCyd(uint8_t cardIndex, bool inverted);
     void drawDiceFaceCyd(uint8_t faceValue, bool inverted);
     void drawEspSymbolCyd(EspSymbol symbol, bool inverted);
+#endif
+
+    // --- M5StickC-Plus2-Pfad: M5GFX-Funktionen ---
+#ifdef BOARD_M5STICKCPLUS2
+    void drawArrowM5Stick(CompassDirection compassDirection, bool inverted);
+    void drawAsciiCharactersM5Stick(const char *text, bool inverted);
+    void drawPlayingCardM5Stick(uint8_t cardIndex, bool inverted);
+    void drawDiceFaceM5Stick(uint8_t faceValue, bool inverted);
+    void drawEspSymbolM5Stick(EspSymbol symbol, bool inverted);
 #endif
 };

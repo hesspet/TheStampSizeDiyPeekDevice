@@ -4,7 +4,7 @@ setlocal enabledelayedexpansion
 set "TOOLS_DIRECTORY=%~dp0"
 set "PROJECT_DIRECTORY=%TOOLS_DIRECTORY%.."
 set "PLATFORMIO_EXECUTABLE=%APPDATA%\Python\Python313\Scripts\pio.exe"
-set "ACTIVE_ENV_FILE=%TOOLS_DIRECTORY%active_env"
+set "ACTIVE_ENV_FILE=%TOOLS_DIRECTORY%.active_env"
 set "COM_PORTS_FILE=%TOOLS_DIRECTORY%.com_ports"
 
 :: Aktive Umgebung laden

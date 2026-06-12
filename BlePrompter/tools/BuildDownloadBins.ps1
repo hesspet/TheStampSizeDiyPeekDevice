@@ -76,6 +76,7 @@ $bootApplicationFile = Join-Path $env:USERPROFILE ".platformio\packages\framewor
 #
 #   pio run -e esp32c3 --target upload --upload-port COM0 --verbose
 #   pio run -e cyd     --target upload --upload-port COM0 --verbose
+#   pio run -e m5stickcplus2 --target upload --upload-port COM0 --verbose
 #
 # Wichtig:
 # - ESP32-C3 verwendet den Bootloader-Offset 0x0000.
@@ -102,6 +103,17 @@ $firmwareBuildConfigurations = @(
         ChipFamily = "ESP32"
         EspToolChip = "esp32"
         BoardName = "esp32dev"
+        BootloaderOffset = "0x1000"
+        FlashFrequency = "40m"
+        FlashMode = "dio"
+        FlashSize = "4MB"
+    },
+    [pscustomobject]@{
+        EnvironmentName = "m5stickcplus2"
+        DisplayName = "M5StickC Plus2"
+        ChipFamily = "ESP32"
+        EspToolChip = "esp32"
+        BoardName = "m5stick-c"
         BootloaderOffset = "0x1000"
         FlashFrequency = "40m"
         FlashMode = "dio"
