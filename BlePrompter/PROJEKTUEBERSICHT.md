@@ -1,6 +1,6 @@
 ---
 Datum: 12.06.2026
-Version: 19
+Version: 20
 Autor: Peter Heß, Germany (+Codex)
 ---
 
@@ -106,7 +106,7 @@ Das CYD-Board startet ohne zyklischen Tiefschlaf. Nach dem Einschalten zeigt das
 
 ### M5StickC Plus2
 
-Der M5StickC Plus2 nutzt wegen des kleinen Akkus ebenfalls den zyklischen Tiefschlafmodus mit einem ersten Wachfenster von `10 s`. Danach läuft der Zyklus mit `30 s` Schlafdauer und `10 s` Wachfenster weiter. Vor jedem Tiefschlaf wird das TFT über M5GFX geleert, die Helligkeit auf `0` gesetzt und das Display in den Hardware-Schlaf versetzt. Das Display wird im Landscape-Format `240 × 135` betrieben.
+Der M5StickC Plus2 nutzt wegen des kleinen Akkus ebenfalls den zyklischen Tiefschlafmodus mit einem ersten Wachfenster von `10 s`. Danach läuft der Zyklus mit `30 s` Schlafdauer und `10 s` Wachfenster weiter. Vor jedem Tiefschlaf wird das TFT über M5GFX geleert, die Helligkeit auf `0` gesetzt und das Display in den Hardware-Schlaf versetzt. Zusätzlich wird GPIO4 als Power-Hold-Pin auf `HIGH` gehalten und für Deep Sleep verriegelt, damit der ESP32-PICO per Timer wieder aufwachen kann. Das Display wird im Landscape-Format `240 × 135` betrieben.
 
 Am oberen langen Displayrand zeigt der M5StickC Plus2 eine Akku-Leiste. Die Länge entspricht dem aktuellen Ladestand. Die Messung nutzt `M5.Power.getBatteryLevel()` und fällt bei Bedarf auf `M5.Power.getBatteryVoltage()` zurück. Die Leiste ist grün über `40 %`, gelb bei `21 %` bis `40 %` und rot bei `0 %` bis `20 %`.
 

@@ -1,5 +1,29 @@
 #include "display/M5StickHardware.h"
 
+#include <driver/gpio.h>
+
+namespace
+{
+
+constexpr gpio_num_t M5StickPowerHoldPin = GPIO_NUM_4;
+
+void enableM5StickPowerHold()
+{
+    gpio_hold_dis(M5StickPowerHoldPin);
+    gpio_deep_sleep_hold_dis();
+    pinMode(static_cast<uint8_t>(M5StickPowerHoldPin), OUTPUT);
+    digitalWrite(static_cast<uint8_t>(M5StickPowerHoldPin), HIGH);
+}
+
+void keepM5StickPowerHoldDuringDeepSleep()
+{
+    enableM5StickPowerHold();
+    gpio_hold_en(M5StickPowerHoldPin);
+    gpio_deep_sleep_hold_en();
+}
+
+} // namespace
+
 M5StickHardware::M5StickHardware()
 {
 }
@@ -8,6 +32,7 @@ void M5StickHardware::begin()
 {
     auto configuration = M5.config();
     M5.begin(configuration);
+    enableM5StickPowerHold();
 
     M5.Display.setRotation(1);
     M5.Display.setBrightness(128);
@@ -153,6 +178,8 @@ void M5StickHardware::deactivateBeforeDeepSleep()
     M5.Display.fillScreen(ColorBackground);
     M5.Display.setBrightness(0);
     M5.Display.sleep();
+    M5.Display.waitDisplay();
+    keepM5StickPowerHoldDuringDeepSleep();
 }
 
 void *M5StickHardware::getRawDisplay()

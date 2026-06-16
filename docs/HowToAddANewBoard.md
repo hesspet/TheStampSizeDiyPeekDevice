@@ -510,6 +510,12 @@ Ursache: `deactivateBeforeDeepSleep()` der neuen Hardwareklasse schaltet das Dis
 
 Lösung: Vor `esp_deep_sleep_start()` wird `displayController.deactivateBeforeDeepSleep()` aufgerufen. Die konkrete Hardwareklasse muss dort mindestens den Bildschirm leeren, die Helligkeit oder das Backlight abschalten und, falls verfügbar, den Display-Schlafmodus aktivieren.
 
+M5StickC Plus2 wacht nach zyklischem Schlaf nicht wieder auf
+
+Ursache: Der M5StickC Plus2 nutzt GPIO4 als Power-Hold-Pin. Wenn dieser Pin im Deep Sleep nicht auf `HIGH` gehalten wird, kann das Board nach dem Einschlafen komplett stromlos werden. Dann greift der ESP32-Timer-Wakeup nicht mehr.
+
+Lösung: In `M5StickHardware::begin()` wird der Power-Hold-Pin wieder normal als Output `HIGH` gesetzt und ein vorheriger GPIO-Hold gelöst. In `M5StickHardware::deactivateBeforeDeepSleep()` wird GPIO4 erneut auf `HIGH` gesetzt, mit `gpio_hold_en(...)` verriegelt und mit `gpio_deep_sleep_hold_en()` über den Deep Sleep gehalten.
+
 Countdown-Restore stellt Bild nicht wieder her
 
 Ursache: Direkt rendernde TFTs haben keinen Framebuffer. `getBufferPtr()` liefert `nullptr`. Das ist akzeptiert; die bestehende Prüfung verhindert Speicherfehler.
